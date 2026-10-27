@@ -19,11 +19,11 @@ def quote(vehicle_type="BIKE", drop=DROP):
 
 
 @pytest.mark.django_db
-def test_fare_is_eight_per_km_with_no_base_fare():
+def test_bike_fare_is_nine_per_km_with_no_base_fare():
     result = quote()
 
     assert result.distance_km > 2.5
-    assert result.fare == (Decimal("8.00") * result.distance_km).quantize(Decimal("0.01"))
+    assert result.fare == (Decimal("9.00") * result.distance_km).quantize(Decimal("0.01"))
 
 
 @pytest.mark.django_db
@@ -33,14 +33,22 @@ def test_km_beyond_threshold_use_the_lower_rate():
     )
     result = quote()
 
-    expected = Decimal("8.00") * 2 + Decimal("4.00") * (result.distance_km - 2)
+    expected = Decimal("9.00") * 2 + Decimal("4.00") * (result.distance_km - 2)
     assert result.fare == expected.quantize(Decimal("0.01"))
 
 
 @pytest.mark.django_db
-def test_fares_below_twenty_are_raised_to_the_twenty_minimum():
-    assert quote(drop=SHORT_DROP).fare == Decimal("20.00")
-    assert quote("AUTO", drop=SHORT_DROP).fare == Decimal("20.00")
+def test_short_trips_are_raised_to_each_vehicles_minimum():
+    assert quote(drop=SHORT_DROP).fare == Decimal("22.00")
+    assert quote("AUTO", drop=SHORT_DROP).fare == Decimal("53.00")
+
+
+@pytest.mark.django_db
+def test_auto_costs_more_than_bike_for_the_same_trip():
+    auto, bike = quote("AUTO"), quote("BIKE")
+
+    assert auto.fare == (Decimal("16.50") * auto.distance_km).quantize(Decimal("0.01"))
+    assert auto.fare > bike.fare
 
 
 @pytest.mark.django_db

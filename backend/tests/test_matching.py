@@ -38,6 +38,7 @@ def test_nearest_eligible_captain_gets_the_offer():
 
 @pytest.mark.django_db
 def test_captain_outside_the_radius_is_not_offered_and_ride_is_cancelled():
+    PlatformConfig.objects.update_or_create(pk=1, defaults={"search_timeout_seconds": 0})
     make_captain(location=FAR)
     customer = make_user(Role.CUSTOMER)
 
@@ -49,6 +50,7 @@ def test_captain_outside_the_radius_is_not_offered_and_ride_is_cancelled():
 
 @pytest.mark.django_db
 def test_captain_with_stale_location_is_not_matched():
+    PlatformConfig.objects.update_or_create(pk=1, defaults={"search_timeout_seconds": 0})
     captain = make_captain(location=NEAR_PICKUP)
     CaptainProfile.objects.filter(pk=captain.pk).update(last_location_at=timezone.now() - timedelta(minutes=5))
     customer = make_user(Role.CUSTOMER)
@@ -61,6 +63,7 @@ def test_captain_with_stale_location_is_not_matched():
 
 @pytest.mark.django_db
 def test_busy_captain_is_not_offered():
+    PlatformConfig.objects.update_or_create(pk=1, defaults={"search_timeout_seconds": 0})
     captain = make_captain(location=NEAR_PICKUP)
     CaptainProfile.objects.filter(pk=captain.pk).update(online_status=OnlineStatus.BUSY)
     customer = make_user(Role.CUSTOMER)
@@ -72,6 +75,7 @@ def test_busy_captain_is_not_offered():
 
 @pytest.mark.django_db
 def test_captain_without_the_requested_vehicle_type_is_not_offered():
+    PlatformConfig.objects.update_or_create(pk=1, defaults={"search_timeout_seconds": 0})
     make_captain(location=NEAR_PICKUP, vehicle_type=VehicleType.AUTO)
     customer = make_user(Role.CUSTOMER)
 
@@ -204,3 +208,13 @@ def test_going_offline_is_refused_while_on_a_ride():
         captain_services.go_offline(captain)
 
     assert info.value.code == "captain_busy"
+
+
+@pytest.mark.django_db
+def test_ride_keeps_searching_until_the_search_window_closes():
+    make_captain(location=FAR)
+    customer = make_user(Role.CUSTOMER)
+
+    ride = services.create_ride(customer, ride_data())
+
+    assert ride.status == RideStatus.SEARCHING

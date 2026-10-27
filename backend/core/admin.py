@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from core import audit
 from core.exceptions import DomainError
-from core.models import AuditLog, PlatformConfig
+from core.models import AuditLog, PlatformConfig, QuickPlace, ServiceZone
 from core.reports import to_csv
 
 
@@ -102,6 +102,18 @@ class PlatformConfigAdmin(AuditedModelAdmin):
                 )
             },
         ),
+        (
+            "Service area",
+            {
+                "fields": (
+                    "restrict_to_service_area",
+                    "service_area_name",
+                    "service_area_latitude",
+                    "service_area_longitude",
+                    "service_area_radius_km",
+                )
+            },
+        ),
         ("Captain plans", {"fields": ("unpaid_dues_limit", "service_timezone", "plan_expiry_reminder_minutes")}),
         ("Ride safety", {"fields": ("require_start_pin", "start_pin_max_attempts", "share_link_grace_minutes")}),
         (
@@ -131,6 +143,26 @@ class PlatformConfigAdmin(AuditedModelAdmin):
     def changelist_view(self, request, extra_context=None):
         config = PlatformConfig.load()
         return self.changeform_view(request, str(config.pk), "", extra_context)
+
+
+@admin.register(ServiceZone)
+class ServiceZoneAdmin(AuditedModelAdmin):
+    list_display = ("name", "shape", "is_active")
+    list_filter = ("shape", "is_active")
+    fieldsets = (
+        (None, {"fields": ("name", "shape", "is_active")}),
+        ("Circle", {"fields": ("latitude", "longitude", "radius_km")}),
+        ("Polygon", {"fields": ("polygon_points",)}),
+    )
+
+
+@admin.register(QuickPlace)
+class QuickPlaceAdmin(AuditedModelAdmin):
+    list_display = ("name", "icon", "sort_order", "is_active")
+    list_editable = ("sort_order", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("name", "address")
+    fields = ("name", "address", "latitude", "longitude", "icon", "sort_order", "is_active")
 
 
 @admin.register(AuditLog)

@@ -30,6 +30,7 @@ const NAV: { group: string; items: { href: string; label: string; badge?: "sos" 
   ] },
   { group: "Settings", items: [
     { href: "/settings", label: "Pricing & config" },
+    { href: "/quick-places", label: "Quick places" },
     { href: "/audit", label: "Audit log" },
   ] },
 ];

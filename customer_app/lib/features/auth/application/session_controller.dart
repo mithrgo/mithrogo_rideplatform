@@ -89,6 +89,18 @@ class SessionController extends Notifier<SessionState> {
       }
     }
     await _tokens.clear();
+    // Saved places belong to the signed-in rider, so the next person on this phone starts empty.
+    await ref.read(recentPlacesProvider.notifier).clear();
+    state = const SessionState.signedOut();
+  }
+
+  Future<List<String>> deletionBlockers() => _auth.deletionBlockers();
+
+  /// Deletes the account on the server, then clears everything stored for it on this phone.
+  Future<void> deleteAccount() async {
+    await _auth.deleteAccount();
+    await _tokens.clear();
+    await ref.read(recentPlacesProvider.notifier).clear();
     state = const SessionState.signedOut();
   }
 

@@ -20,11 +20,12 @@ class CaptainProfileSerializer(serializers.ModelSerializer):
             "license_number",
             "license_expiry",
             "kyc_status",
+            "kyc_rejection_reason",
             "online_status",
             "rating",
             "total_rides",
         ]
-        read_only_fields = ["kyc_status", "online_status", "rating", "total_rides", "license_number", "license_expiry"]
+        read_only_fields = ["kyc_status", "kyc_rejection_reason", "online_status", "rating", "total_rides", "license_number", "license_expiry"]
 
 
 class KycSubmitSerializer(serializers.Serializer):

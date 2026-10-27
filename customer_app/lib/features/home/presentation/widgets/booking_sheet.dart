@@ -193,28 +193,10 @@ class _TipSelector extends StatelessWidget {
   bool get _isCustom => tip > 0 && !_presets.contains(tip);
 
   Future<void> _askCustom(BuildContext context) async {
-    final controller = TextEditingController(text: _isCustom ? '$tip' : '');
     final value = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Custom tip'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
-          decoration: const InputDecoration(prefixText: '₹ ', hintText: 'Amount'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, int.tryParse(controller.text) ?? 0),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      builder: (context) => _CustomTipDialog(initial: _isCustom ? '$tip' : ''),
     );
-    controller.dispose();
     if (value != null) onChanged(value);
   }
 
@@ -234,6 +216,49 @@ class _TipSelector extends StatelessWidget {
           label: Text(_isCustom ? '₹$tip' : 'Custom'),
           selected: _isCustom,
           onSelected: (_) => _askCustom(context),
+        ),
+      ],
+    );
+  }
+}
+
+/// Owns its controller so it is disposed only after the dialog's exit
+/// animation finishes (disposing it right after `showDialog` returns trips
+/// the `_dependents.isEmpty` assertion).
+class _CustomTipDialog extends StatefulWidget {
+  const _CustomTipDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_CustomTipDialog> createState() => _CustomTipDialogState();
+}
+
+class _CustomTipDialogState extends State<_CustomTipDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Custom tip'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+        decoration: const InputDecoration(prefixText: '₹ ', hintText: 'Amount'),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context, int.tryParse(_controller.text) ?? 0),
+          child: const Text('Add'),
         ),
       ],
     );

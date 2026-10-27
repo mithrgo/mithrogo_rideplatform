@@ -23,15 +23,24 @@ class OverpassNearbyFeatureService implements NearbyFeatureService {
     http.Client? client,
     String? baseUrl,
     String? userAgent,
-    this.timeout = const Duration(seconds: 30),
+    this.timeout = const Duration(seconds: 8),
   })  : _client = client ?? http.Client(),
-        _baseUrl = Uri.parse(baseUrl ?? Env.overpassBaseUrl),
+        // An explicit [baseUrl] is used alone. Otherwise the main server is tried first and the
+        // public mirrors take over when it is busy or down.
+        _endpoints = baseUrl != null
+            ? [Uri.parse(baseUrl)]
+            : [Uri.parse(Env.overpassBaseUrl), ..._mirrors.map(Uri.parse)],
         _userAgent = userAgent ?? Env.searchUserAgent;
 
   final http.Client _client;
-  final Uri _baseUrl;
+  final List<Uri> _endpoints;
   final String _userAgent;
   final Duration timeout;
+
+  static const _mirrors = [
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://overpass.private.coffee/api/interpreter',
+  ];
 
   static const _maxCacheEntries = 20;
   final Map<String, Future<List<Place>>> _cache = {};
@@ -55,28 +64,38 @@ class OverpassNearbyFeatureService implements NearbyFeatureService {
   Future<List<Place>> _fetch(PlaceCategory category, LatLng origin, double radiusMeters) async {
     final query = buildOverpassQuery(category, origin: origin, radiusMeters: radiusMeters);
 
-    final http.Response response;
-    try {
-      response = await _client
-          .post(
-            _baseUrl,
-            headers: {'User-Agent': _userAgent, 'Content-Type': 'application/x-www-form-urlencoded'},
-            body: {'data': query},
-          )
-          .timeout(timeout);
-    } on TimeoutException {
-      throw const PlaceSearchException('Nearby places are taking too long. Try again.');
-    } catch (_) {
-      throw const PlaceSearchException('Could not reach the nearby places service.');
+    PlaceSearchException? lastFailure;
+    http.Response? response;
+    for (final endpoint in _endpoints) {
+      try {
+        final attempt = await _client
+            .post(
+              endpoint,
+              headers: {'User-Agent': _userAgent, 'Content-Type': 'application/x-www-form-urlencoded'},
+              body: {'data': query},
+            )
+            .timeout(timeout);
+        if (attempt.statusCode == 200) {
+          response = attempt;
+          break;
+        }
+        // 429, 502, 503 and 504 mean this shared server is busy or down: the next mirror may answer.
+        // Anything else is not helped by another server.
+        if (attempt.statusCode == 429 || attempt.statusCode == 504) {
+          lastFailure = const PlaceSearchException('Nearby places service is busy. Wait a moment and try again.');
+        } else {
+          lastFailure = PlaceSearchException('Nearby places service is unavailable (HTTP ${attempt.statusCode}).');
+          if (attempt.statusCode != 502 && attempt.statusCode != 503) throw lastFailure;
+        }
+      } on TimeoutException {
+        lastFailure = const PlaceSearchException('Nearby places are taking too long. Try again.');
+      } on PlaceSearchException {
+        rethrow;
+      } catch (_) {
+        lastFailure = const PlaceSearchException('Could not reach the nearby places service.');
+      }
     }
-
-    // 429 and 504 mean the shared server is busy. Ask the rider to wait, rather than retrying in a loop.
-    if (response.statusCode == 429 || response.statusCode == 504) {
-      throw const PlaceSearchException('Nearby places service is busy. Wait a moment and try again.');
-    }
-    if (response.statusCode != 200) {
-      throw PlaceSearchException('Nearby places service is unavailable (HTTP ${response.statusCode}).');
-    }
+    if (response == null) throw lastFailure!;
     return parseOverpassResponse(response.body, category: category, origin: origin);
   }
 
@@ -88,7 +107,7 @@ class OverpassNearbyFeatureService implements NearbyFeatureService {
     final filters = [
       for (final pair in category.tags) 'nwr["${pair[0]}"="${pair[1]}"]($around);',
     ].join('\n  ');
-    return '[out:json][timeout:25];\n(\n  $filters\n);\nout body center;';
+    return '[out:json][timeout:10];\n(\n  $filters\n);\nout body center;';
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/location/lat_lng.dart';
 import '../../../core/location/place.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
@@ -32,6 +33,7 @@ class RideRepository {
     required VehicleType vehicleType,
     required PaymentMethod paymentMethod,
     required String idempotencyKey,
+    required LatLng deviceLocation,
     int tip = 0,
   }) async {
     final response = await _api.send((dio) => dio.post<Map<String, dynamic>>(
@@ -42,6 +44,9 @@ class RideRepository {
             'pickup_address': pickup.address,
             'drop_address': drop.address,
             'payment_method': paymentMethod.apiValue,
+            // Where the booker is, which differs from the pickup when booking for a friend.
+            'device_latitude': deviceLocation.latitude.toStringAsFixed(6),
+            'device_longitude': deviceLocation.longitude.toStringAsFixed(6),
             if (tip > 0) 'tip': tip,
           },
           options: Options(headers: {'Idempotency-Key': idempotencyKey}),

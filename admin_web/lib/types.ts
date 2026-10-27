@@ -87,3 +87,6 @@ export type Plan = { id: number; code: string; name: string; plan_type: string; 
 
 export type AuditEntry = { id: number; actor: UserBrief | null; action: string; model: string; object_id: string;
   changes: Record<string, unknown>; created_at: string };
+
+export type QuickPlace = { id: number; name: string; address: string; latitude: string; longitude: string;
+  icon: string; sort_order: number; is_active: boolean; updated_at: string };

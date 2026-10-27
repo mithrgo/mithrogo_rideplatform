@@ -79,6 +79,8 @@ def ride_data(vehicle_type=VehicleType.BIKE, payment_method="ONLINE", pickup=PIC
         "drop_address": "Drop point",
         "drop_latitude": drop[0],
         "drop_longitude": drop[1],
+        "device_latitude": pickup[0],
+        "device_longitude": pickup[1],
         "payment_method": payment_method,
     }
 
@@ -86,7 +88,7 @@ def ride_data(vehicle_type=VehicleType.BIKE, payment_method="ONLINE", pickup=PIC
 def ride_payload(vehicle_type=VehicleType.BIKE, payment_method="ONLINE", pickup=PICKUP, drop=DROP):
     """Ride request as the mobile apps send it (strings)."""
     payload = ride_data(vehicle_type, payment_method, pickup, drop)
-    for key in ("pickup_latitude", "pickup_longitude", "drop_latitude", "drop_longitude"):
+    for key in ("pickup_latitude", "pickup_longitude", "drop_latitude", "drop_longitude", "device_latitude", "device_longitude"):
         payload[key] = str(payload[key])
     return payload
 

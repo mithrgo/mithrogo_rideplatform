@@ -15,6 +15,7 @@ import '../../notifications/application/notification_providers.dart';
 import '../../ride/application/ride_providers.dart';
 import '../../ride/models/ride.dart';
 import '../../ride/models/ride_options.dart';
+import '../application/quick_places_provider.dart';
 import 'widgets/booking_sheet.dart';
 import 'widgets/discovery_sheet.dart';
 import 'widgets/location_banner.dart';
@@ -98,6 +99,8 @@ class HomeScreen extends ConsumerWidget {
                 : DiscoverySheet(
                     firstName: user?.firstName ?? '',
                     onSearchTap: () => context.push(AppRoutes.search),
+                    quickPlaces: ref.watch(quickPlacesProvider).valueOrNull ?? const [],
+                    onQuickPlaceTap: (place) => _pickDestination(ref, place.toPlace()),
                   ),
           ),
         ],

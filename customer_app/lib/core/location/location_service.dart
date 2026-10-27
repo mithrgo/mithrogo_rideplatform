@@ -39,6 +39,9 @@ class LocationException implements Exception {
 class GeolocatorLocationService implements LocationService {
   static const _timeout = Duration(seconds: 15);
 
+  /// A fix this recent is reused, so opening search does not wait for a new GPS reading.
+  static const _recentFix = Duration(seconds: 60);
+
   @override
   Future<LatLng> currentLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
@@ -67,7 +70,9 @@ class GeolocatorLocationService implements LocationService {
 
     final LatLng point;
     try {
-      final position = await Geolocator.getCurrentPosition(
+      final last = await Geolocator.getLastKnownPosition();
+      final isRecent = last != null && DateTime.now().difference(last.timestamp) <= _recentFix;
+      final position = isRecent ? last : await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: _timeout,

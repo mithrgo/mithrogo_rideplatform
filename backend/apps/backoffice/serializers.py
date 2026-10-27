@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import AuditLog, PlatformConfig
+from core.models import AuditLog, PlatformConfig, QuickPlace
 from apps.captains.models import CaptainProfile, KycDocument
 from apps.payments.models import Payment
 from apps.promotions.models import PromoCode
@@ -279,3 +279,13 @@ class AuditLogSerializer(serializers.ModelSerializer):
         model = AuditLog
         fields = ["id", "actor", "action", "model", "object_id", "changes", "created_at"]
         read_only_fields = fields
+
+
+class QuickPlaceSerializer(serializers.ModelSerializer):
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, min_value=-90, max_value=90)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, min_value=-180, max_value=180)
+
+    class Meta:
+        model = QuickPlace
+        fields = ["id", "name", "address", "latitude", "longitude", "icon", "sort_order", "is_active", "updated_at"]
+        read_only_fields = ["id", "updated_at"]

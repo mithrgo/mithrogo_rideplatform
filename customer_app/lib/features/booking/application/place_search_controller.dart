@@ -6,12 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/config/env.dart';
 import '../../../app/providers.dart';
 import '../../../core/geocoding/place_category.dart';
+import '../../../core/geocoding/place_identity.dart';
 import '../../../core/geocoding/place_search_service.dart';
 import '../../../core/geocoding/search_intent.dart';
 import '../../../core/geocoding/search_ranking.dart';
+import '../../../core/location/city_defaults.dart';
 import '../../../core/location/lat_lng.dart';
 import '../../../core/location/location_service.dart';
 import '../../../core/location/place.dart';
+import '../../../core/location/service_area.dart';
 import '../../../core/network/api_exception.dart';
 
 /// Waits this long after the last keystroke before searching.
@@ -155,16 +158,20 @@ class PlaceSearchController extends AutoDisposeNotifier<PlaceSearchState> {
   }
 
   Future<void> _run(String query, int id, {required bool expand}) async {
-    if (isExplicitPlaceQuery(query)) {
-      return _runExplicit(query, id);
-    }
+    // A query with a place name in it ("venu mall", "railway station hyderabad") also looks across
+    // India, but places near the rider are always listed first.
+    final explicit = isExplicitPlaceQuery(query);
+    if (explicit) expand = false;
 
-    // The origin must be the rider's real position. It is never a default or a search bias.
-    final LatLng origin;
+    // The origin is the rider's real position while they are inside the city. Outside it, nearby
+    // results would be places the rider cannot book, so the search is centred on the city instead.
+    final LatLng gps;
     try {
-      origin = await ref.read(currentLocationProvider.future).timeout(_locationWait);
+      gps = await ref.read(currentLocationProvider.future).timeout(_locationWait);
     } on LocationException catch (error) {
       if (id != _requestId) return;
+      // A named place can still be found without a position.
+      if (explicit) return _runExplicit(query, id);
       state = PlaceSearchState(
         query: query,
         status: PlaceSearchStatus.needsLocation,
@@ -174,6 +181,7 @@ class PlaceSearchController extends AutoDisposeNotifier<PlaceSearchState> {
       return;
     } catch (_) {
       if (id != _requestId) return;
+      if (explicit) return _runExplicit(query, id);
       state = const PlaceSearchState(
         status: PlaceSearchStatus.needsLocation,
         locationFailure: LocationFailure.unavailable,
@@ -182,76 +190,146 @@ class PlaceSearchController extends AutoDisposeNotifier<PlaceSearchState> {
       return;
     }
     if (id != _requestId) return;
+    final origin = searchOriginFor(gps);
+    final outsideCity = origin != gps;
 
-    final key = 'nearby|${query.toLowerCase()}|${_originKey(origin)}|$expand';
+    final key = '${explicit ? 'named' : 'nearby'}|${query.toLowerCase()}|${_originKey(origin)}|$expand';
     final cached = _cache[key];
     if (cached != null) {
       state = _stateFrom(query, cached, expanded: expand);
       return;
     }
 
-    state = PlaceSearchState(query: query, status: PlaceSearchStatus.loading, expanded: expand);
+    state = PlaceSearchState(query: query, status: PlaceSearchStatus.loading, expanded: expand, explicit: explicit);
 
     final radius = Env.localSearchRadiusMeters.toDouble();
     final expandedRadius = Env.expandedSearchRadiusMeters.toDouble();
-    final category = categoryForQuery(query);
+    // A named place is not found by its type, so mapped features are only for generic queries.
+    final category = explicit ? null : categoryForQuery(query);
     final hits = <ScoredPlace>[];
     final failures = <String>[];
     var strategies = 0;
 
+    // The two strategies talk to different servers, so they run at the same time. Whichever answers
+    // first is shown right away, and the other one fills in when it arrives.
+    void showPartial() {
+      if (id != _requestId) return;
+      final partial = rankNearby(hits, radiusMeters: radius);
+      if (partial.isEmpty) return;
+      state = _stateFrom(
+        query,
+        _SearchAnswer(explicit: explicit, nearby: partial, beyond: const [], canExpand: false),
+        expanded: expand,
+      );
+    }
+
+    var mappedFailed = false;
+
     // Strategy 1: mapped features (railway=station and similar). Finds stations that are not named "railway".
-    if (category != null) {
-      strategies++;
+    Future<void> mappedFeatures(PlaceCategory category) async {
       try {
-        await _throttle();
-        if (id != _requestId) return;
         final features = await ref.read(nearbyFeatureServiceProvider).search(
               category,
               origin: origin,
               radiusMeters: expand ? expandedRadius : radius,
             );
-        if (id != _requestId) return;
         hits.addAll(features.map((p) => ScoredPlace(p, MatchTier.mappedFeature)));
+        showPartial();
+      } on PlaceSearchException catch (error) {
+        failures.add(error.message);
+        mappedFailed = true;
+      }
+    }
+
+    // Strategy 2: text search. Nearby is bounded to the radius. Expanded is biased toward the origin.
+    // Only this one is throttled: the limit is Nominatim's, and Overpass is a separate server.
+    Future<void> textSearch() async {
+      try {
+        await _throttle();
+        if (id != _requestId) return;
+        final texts = await ref.read(placeSearchServiceProvider).search(
+              query,
+              origin: origin,
+              scope: expand ? SearchScope.wide : SearchScope.nearby,
+            );
+        hits.addAll(texts.map((p) => ScoredPlace(p, MatchTier.textMatch)));
+        showPartial();
       } on PlaceSearchException catch (error) {
         failures.add(error.message);
       }
     }
 
-    // Strategy 2: text search. Nearby is bounded to the radius. Expanded is biased toward the origin.
-    strategies++;
-    try {
-      await _throttle();
-      if (id != _requestId) return;
-      final texts = await ref.read(placeSearchServiceProvider).search(
-            query,
-            origin: origin,
-            scope: expand ? SearchScope.wide : SearchScope.nearby,
-          );
-      if (id != _requestId) return;
-      hits.addAll(texts.map((p) => ScoredPlace(p, MatchTier.textMatch)));
-    } on PlaceSearchException catch (error) {
-      failures.add(error.message);
+    // Strategy 3, named places only: all of India, ranked toward the rider. It is listed after
+    // the nearby matches, in the order the search service returned it.
+    final wide = <Place>[];
+    Future<void> wideSearch() async {
+      try {
+        await _throttle();
+        if (id != _requestId) return;
+        wide.addAll(await ref.read(placeSearchServiceProvider).search(query, origin: origin, scope: SearchScope.wide));
+      } on PlaceSearchException catch (error) {
+        failures.add(error.message);
+      }
     }
 
-    if (hits.isEmpty && failures.length == strategies) {
-      state = PlaceSearchState(query: query, status: PlaceSearchStatus.error, expanded: expand, error: failures.first);
+    strategies = (category == null ? 1 : 2) + (explicit ? 1 : 0);
+    await Future.wait([
+      if (category != null) mappedFeatures(category),
+      textSearch(),
+      if (explicit) wideSearch(),
+    ]);
+    if (id != _requestId) return;
+
+    // The mapped-feature server is down, and a half-typed word like "rail" matches no name. Ask the
+    // text search for the kind of place by its full name instead ("Railway station").
+    if (mappedFailed && category != null && category.label.toLowerCase() != query.toLowerCase()) {
+      try {
+        await _throttle();
+        if (id != _requestId) return;
+        final byLabel = await ref.read(placeSearchServiceProvider).search(
+              category.label,
+              origin: origin,
+              scope: expand ? SearchScope.wide : SearchScope.nearby,
+            );
+        hits.addAll(byLabel.map((p) => ScoredPlace(p, MatchTier.textMatch)));
+      } on PlaceSearchException {
+        // The failure from the first attempt is already shown.
+      }
+      if (id != _requestId) return;
+    }
+
+    if (hits.isEmpty && wide.isEmpty && failures.length == strategies) {
+      state = PlaceSearchState(query: query, status: PlaceSearchStatus.error, expanded: expand, error: _riderMessage(failures.first));
       return;
     }
 
     final nearby = rankNearby(hits, radiusMeters: radius);
-    final beyond = expand ? rankBeyond(hits, radiusMeters: radius) : const <Place>[];
+    final nearbyKeys = {for (final place in nearby) placeIdentity(place)};
+    final beyond = explicit
+        ? [for (final place in rankExplicit(wide)) if (!nearbyKeys.contains(placeIdentity(place))) place]
+        : expand
+            ? rankBeyond(hits, radiusMeters: radius)
+            : const <Place>[];
     final answer = _SearchAnswer(
-      explicit: false,
+      explicit: explicit,
       nearby: nearby,
       beyond: beyond,
-      canExpand: !expand && nearby.isEmpty,
-      notice: failures.isEmpty ? null : failures.join(' '),
+      canExpand: !explicit && !expand && nearby.isEmpty,
+      notice: [
+        if (outsideCity) 'You are outside the service area, so these are places near $nizamabadLabel.',
+        // Raw server errors (HTTP 403 and the like) mean nothing to a rider, and the other strategies
+        // already filled in the results.
+        ...failures.where((message) => !message.contains('HTTP')),
+      ].join(' ').nullIfEmpty,
     );
     _logSearch(origin, expand: expand, hits: hits, answer: answer, expandedRadius: expandedRadius);
 
     _remember(key, answer);
     state = _stateFrom(query, answer, expanded: expand);
   }
+
+  String _riderMessage(String message) =>
+      message.contains('HTTP') ? 'Could not load places right now. Please try again.' : message;
 
   /// A named place: searched across India, independent of the GPS position.
   Future<void> _runExplicit(String query, int id) async {
@@ -338,6 +416,10 @@ class PlaceSearchController extends AutoDisposeNotifier<PlaceSearchState> {
         'shown(nearby=${answer.nearby.length}, beyond=${answer.beyond.length}) '
         'radiusKm=${Env.localSearchRadiusMeters ~/ 1000} expandedRadiusKm=${expandedRadius ~/ 1000}');
   }
+}
+
+extension on String {
+  String? get nullIfEmpty => isEmpty ? null : this;
 }
 
 final placeSearchControllerProvider =

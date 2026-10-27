@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from core import audit, reports
 from core.exceptions import DomainError
 from core.metrics import dashboard_metrics
-from core.models import AuditLog, PlatformConfig
+from core.models import AuditLog, PlatformConfig, QuickPlace
 from apps.backoffice import serializers as s
 from apps.backoffice.permissions import IsAdminRole
 from apps.captains import services as captain_services
@@ -448,6 +448,28 @@ class FareDetailView(_AuditedUpdateView):
     serializer_class = s.FareConfigSerializer
     queryset = FareConfig.objects.all()
     audit_action = "update_fare"
+
+
+class QuickPlaceListView(generics.ListCreateAPIView):
+    permission_classes = [IsAdminRole]
+    serializer_class = s.QuickPlaceSerializer
+    pagination_class = None
+    queryset = QuickPlace.objects.all()
+
+    def perform_create(self, serializer):
+        place = serializer.save()
+        audit.record(self.request.user, "api.create_quick_place", place, {"name": place.name})
+
+
+class QuickPlaceDetailView(_AuditedUpdateView, generics.DestroyAPIView):
+    http_method_names = ["get", "patch", "delete"]
+    serializer_class = s.QuickPlaceSerializer
+    queryset = QuickPlace.objects.all()
+    audit_action = "update_quick_place"
+
+    def perform_destroy(self, instance):
+        audit.record(self.request.user, "api.delete_quick_place", instance, {"name": instance.name})
+        instance.delete()
 
 
 class PlanListView(generics.ListAPIView):

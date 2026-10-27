@@ -25,6 +25,11 @@ class VehicleOptionTile extends StatelessWidget {
         VehicleType.auto => Icons.local_taxi,
       };
 
+  int get _seats => switch (vehicle) {
+        VehicleType.bike => 1,
+        VehicleType.auto => 3,
+      };
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -63,7 +68,15 @@ class VehicleOptionTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(vehicle.label, style: theme.textTheme.titleMedium),
+                    Row(
+                      children: [
+                        Text(vehicle.label, style: theme.textTheme.titleMedium),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.person, size: 16, color: AppColors.ink),
+                        const SizedBox(width: 2),
+                        Text('$_seats', style: theme.textTheme.bodyMedium),
+                      ],
+                    ),
                     const SizedBox(height: 2),
                     Text(detail, style: theme.textTheme.bodySmall),
                   ],

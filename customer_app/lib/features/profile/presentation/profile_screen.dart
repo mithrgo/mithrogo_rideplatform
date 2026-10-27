@@ -8,9 +8,51 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../../../shared/widgets/loading_view.dart';
+import '../../auth/application/session_controller.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
+
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    final session = ref.read(sessionControllerProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final blockers = await session.deletionBlockers();
+      if (!context.mounted) return;
+      if (blockers.isNotEmpty) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Cannot delete yet'),
+            content: Text(blockers.join('\n\n')),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+          ),
+        );
+        return;
+      }
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete account?'),
+          content: const Text(
+            'Your account and personal details will be permanently deleted. This cannot be undone.',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      await session.deleteAccount();
+    } catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(userMessage(error))));
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -109,6 +151,13 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => context.push(AppRoutes.settings),
                   ),
                 ],
+              ),
+              const SizedBox(height: 24),
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+                onPressed: () => _deleteAccount(context, ref),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete account'),
               ),
             ],
           );

@@ -61,6 +61,7 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
   }
 
   void _selectPlace(Place place) {
+    ref.read(recentPlacesProvider.notifier).remember(place);
     final notifier = ref.read(bookingControllerProvider.notifier);
     if (_editingDrop) {
       notifier.setDrop(place);
@@ -170,6 +171,7 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
     switch (search.status) {
       case PlaceSearchStatus.idle:
         return [
+          ..._recentRows(search.query, theme),
           _Message(
             'Search for a place. Nearby results use your location. '
             'For another city, add its name, such as "railway station Hyderabad".',
@@ -177,7 +179,10 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
           ),
         ];
       case PlaceSearchStatus.tooShort:
-        return [_Message('Type at least ${PlaceSearchController.minQueryLength} letters.', theme: theme)];
+        return [
+          ..._recentRows(search.query, theme),
+          _Message('Type at least ${PlaceSearchController.minQueryLength} letters.', theme: theme),
+        ];
       case PlaceSearchStatus.loading:
         return const [
           Padding(
@@ -217,7 +222,7 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
             ),
           if (search.explicit && search.beyond.isNotEmpty)
             _SectionHeader('Matches across India', theme: theme),
-          if (!search.explicit && search.nearby.isNotEmpty)
+          if (search.nearby.isNotEmpty)
             _SectionHeader('Within $radiusKm km of you', theme: theme),
           for (final place in search.nearby) _placeTile(place, theme),
           if (search.canExpand) ...[
@@ -236,7 +241,34 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
     }
   }
 
-  Widget _placeTile(Place place, ThemeData theme) {
+  /// Places chosen before, shown until the rider has typed enough to search. Typing narrows them.
+  List<Widget> _recentRows(String query, ThemeData theme) {
+    final needle = query.trim().toLowerCase();
+    final recent = [
+      for (final place in ref.watch(recentPlacesProvider))
+        if (needle.isEmpty || '${place.name} ${place.address}'.toLowerCase().contains(needle)) place,
+    ];
+    if (recent.isEmpty) return const [];
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 8, 0),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text('Recent', style: theme.textTheme.labelLarge?.copyWith(color: AppColors.textSecondary)),
+            ),
+            TextButton(
+              onPressed: () => ref.read(recentPlacesProvider.notifier).clear(),
+              child: const Text('Clear'),
+            ),
+          ],
+        ),
+      ),
+      for (final place in recent) _placeTile(place, theme, icon: Icons.history),
+    ];
+  }
+
+  Widget _placeTile(Place place, ThemeData theme, {IconData icon = Icons.place_outlined}) {
     return ListTile(
       leading: Container(
         width: 40,
@@ -245,7 +277,7 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.place_outlined, color: AppColors.ink, size: 20),
+        child: Icon(icon, color: AppColors.ink, size: 20),
       ),
       title: Text(place.name, style: theme.textTheme.bodyLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(

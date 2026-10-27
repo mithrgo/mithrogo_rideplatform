@@ -9,8 +9,9 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from core.exceptions import Conflict, DomainError, Forbidden, RateLimited
+from core.geo import haversine_km
 from core.metrics import service_day_start
-from core.models import PlatformConfig
+from core.models import PlatformConfig, ServiceZone
 from apps.captains.models import CaptainProfile, OnlineStatus
 from apps.captains.services import describe_reasons, eligibility_reasons, update_location
 from apps.notifications.services import notify
@@ -47,7 +48,34 @@ PIN_VISIBLE_STATUSES = {RideStatus.SEARCHING, RideStatus.ACCEPTED, RideStatus.CA
 
 # ---------- customer side ----------
 
+def _inside_service_area(config, latitude, longitude):
+    """Inside the main service area, or inside any active extra zone."""
+    main = haversine_km(latitude, longitude, config.service_area_latitude, config.service_area_longitude)
+    if main <= float(config.service_area_radius_km):
+        return True
+    return any(zone.contains(latitude, longitude) for zone in ServiceZone.objects.filter(is_active=True))
+
+
+def ensure_in_service_area(data, check_device=False):
+    """Pickup and drop (and, when booking, the rider's own device) must be inside the service area."""
+    config = PlatformConfig.load()
+    if not config.restrict_to_service_area:
+        return
+    name = config.service_area_name
+    if not _inside_service_area(config, data["pickup_latitude"], data["pickup_longitude"]):
+        raise DomainError(f"Pickup is outside our service area. Rides are available only in {name}.", code="pickup_outside_service_area")
+    if not _inside_service_area(config, data["drop_latitude"], data["drop_longitude"]):
+        raise DomainError(f"Drop is outside our service area. Rides are available only in {name}.", code="drop_outside_service_area")
+    if check_device:
+        lat, lon = data.get("device_latitude"), data.get("device_longitude")
+        if lat is None or lon is None:
+            raise DomainError("We could not confirm your location. Turn on location access to book.", code="device_location_required")
+        if not _inside_service_area(config, lat, lon):
+            raise DomainError(f"You must be in {name} to book a ride, even for someone else.", code="booker_outside_service_area")
+
+
 def estimate(data, customer=None):
+    ensure_in_service_area(data)
     quote = pricing.quote(
         data["vehicle_type"],
         data["pickup_latitude"],
@@ -90,6 +118,7 @@ def create_ride(customer, data, idempotency_key=None):
         raise Conflict("You already have an active ride.", code="active_ride_exists")
     if PlatformConfig.load().block_booking_on_unpaid_fees and outstanding_fees(customer).exists():
         raise Conflict("Please pay your pending cancellation fee to book again.", code="unpaid_cancellation_fee")
+    ensure_in_service_area(data, check_device=True)
 
     quote = pricing.quote(
         data["vehicle_type"],

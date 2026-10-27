@@ -118,12 +118,15 @@ class BookingController extends Notifier<BookingState> {
     }
     final pickup = await _origin();
     await _ensureWithinRideLimit(pickup, drop);
+    // The booker must be in the service area even when the pickup is a friend's address.
+    final device = await ref.read(currentLocationProvider.future);
     final ride = await ref.read(rideRepositoryProvider).create(
           pickup: pickup,
           drop: drop,
           vehicleType: state.vehicle,
           paymentMethod: state.payment,
           tip: state.tip,
+          deviceLocation: device,
           idempotencyKey: DateTime.now().microsecondsSinceEpoch.toString(),
         );
     clearDrop();

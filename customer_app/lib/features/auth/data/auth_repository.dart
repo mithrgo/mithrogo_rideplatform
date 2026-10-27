@@ -43,6 +43,19 @@ class AuthRepository {
     return AppUser.fromJson(response.data!);
   }
 
+  /// Reasons the account can't be deleted right now (an active ride, unpaid fees); empty when it can.
+  Future<List<String>> deletionBlockers() async {
+    final response = await _api.send((dio) => dio.get<Map<String, dynamic>>(ApiEndpoints.deleteAccount));
+    return [for (final reason in (response.data!['reasons'] as List? ?? const [])) reason.toString()];
+  }
+
+  Future<void> deleteAccount() async {
+    await _api.send((dio) => dio.post<void>(
+          ApiEndpoints.deleteAccount,
+          data: {'confirm': true},
+        ));
+  }
+
   Future<void> logout(String refresh) async {
     await _api.send((dio) => dio.post<void>(
           ApiEndpoints.logout,

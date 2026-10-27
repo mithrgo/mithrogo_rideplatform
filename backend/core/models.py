@@ -1,5 +1,8 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+
+from core.geo import haversine_km, parse_polygon, point_in_polygon
 
 
 class TimeStampedModel(models.Model):
@@ -15,6 +18,7 @@ class PlatformConfig(TimeStampedModel):
 
     search_radius_km = models.DecimalField("search radius (km)", max_digits=5, decimal_places=2, default=3)
     offer_timeout_seconds = models.PositiveIntegerField("offer timeout (seconds)", default=15)
+    search_timeout_seconds = models.PositiveIntegerField("search timeout (seconds)", default=120)
     max_offer_attempts = models.PositiveIntegerField("max captains offered per ride", default=5)
     location_freshness_seconds = models.PositiveIntegerField(
         "captain location freshness (seconds)",
@@ -42,6 +46,23 @@ class PlatformConfig(TimeStampedModel):
         max_length=64,
         default=settings.TIME_ZONE,
         help_text="Defines the business day for ride-share counting.",
+    )
+
+    # Service area
+    restrict_to_service_area = models.BooleanField(
+        "restrict rides to the service area",
+        default=True,
+        help_text="Pickup, drop and the rider's own device must all be inside the service area to book.",
+    )
+    service_area_name = models.CharField("service area name", max_length=60, default="Nizamabad")
+    service_area_latitude = models.DecimalField(
+        "service area centre latitude", max_digits=9, decimal_places=6, default="18.672500"
+    )
+    service_area_longitude = models.DecimalField(
+        "service area centre longitude", max_digits=9, decimal_places=6, default="78.094100"
+    )
+    service_area_radius_km = models.DecimalField(
+        "service area radius (km)", max_digits=5, decimal_places=2, default=20
     )
 
     # Ride safety
@@ -154,3 +175,81 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} {self.model}#{self.object_id}"
+
+
+class ServiceZone(TimeStampedModel):
+    """An extra bookable area on top of the main service area, for example an airport or a nearby town."""
+
+    class Shape(models.TextChoices):
+        CIRCLE = "CIRCLE", "Circle (centre and radius)"
+        POLYGON = "POLYGON", "Polygon (list of corner points)"
+
+    name = models.CharField(max_length=80)
+    shape = models.CharField(max_length=10, choices=Shape.choices, default=Shape.CIRCLE)
+    latitude = models.DecimalField("centre latitude", max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField("centre longitude", max_digits=9, decimal_places=6, null=True, blank=True)
+    radius_km = models.DecimalField("radius (km)", max_digits=5, decimal_places=2, null=True, blank=True)
+    polygon_points = models.TextField(
+        "corner points",
+        blank=True,
+        help_text="One 'latitude, longitude' pair per line, going around the edge of the area.",
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        if self.shape == self.Shape.CIRCLE:
+            if self.latitude is None or self.longitude is None or not self.radius_km:
+                raise ValidationError("A circle needs a centre latitude, centre longitude and radius.")
+        else:
+            try:
+                parse_polygon(self.polygon_points)
+            except ValueError as exc:
+                raise ValidationError({"polygon_points": str(exc)})
+
+    def contains(self, latitude, longitude):
+        if self.shape == self.Shape.CIRCLE:
+            return haversine_km(latitude, longitude, self.latitude, self.longitude) <= float(self.radius_km)
+        return point_in_polygon(latitude, longitude, parse_polygon(self.polygon_points))
+
+
+class QuickPlace(TimeStampedModel):
+    """A popular destination shown as a card on the customer app's home screen. Managed in admin."""
+
+    class Icon(models.TextChoices):
+        PLACE = "place", "Pin"
+        TRAIN = "train", "Train"
+        BUS = "bus", "Bus"
+        MALL = "mall", "Shopping"
+        HOSPITAL = "hospital", "Hospital"
+        TEMPLE = "temple", "Temple"
+        SCHOOL = "school", "School"
+        AIRPORT = "airport", "Airport"
+        RESTAURANT = "restaurant", "Food"
+        PARK = "park", "Park"
+        OFFICE = "office", "Office"
+
+    name = models.CharField(max_length=40, help_text="Short label on the card, e.g. Railway Station.")
+    address = models.CharField(max_length=255, help_text="Full address saved on the ride.")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    icon = models.CharField(max_length=12, choices=Icon.choices, default=Icon.PLACE)
+    sort_order = models.PositiveSmallIntegerField(default=0, help_text="Smaller numbers show first.")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        if self.latitude is not None and not -90 <= self.latitude <= 90:
+            raise ValidationError({"latitude": "Latitude must be between -90 and 90."})
+        if self.longitude is not None and not -180 <= self.longitude <= 180:
+            raise ValidationError({"longitude": "Longitude must be between -180 and 180."})

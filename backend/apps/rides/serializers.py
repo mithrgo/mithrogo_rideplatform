@@ -20,6 +20,13 @@ class RideCreateSerializer(EstimateSerializer):
     pickup_address = serializers.CharField(max_length=255)
     drop_address = serializers.CharField(max_length=255)
     payment_method = serializers.ChoiceField(choices=PaymentMethod.choices, default=PaymentMethod.ONLINE)
+    # Where the person booking is. Differs from the pickup when booking for a friend.
+    device_latitude = serializers.DecimalField(
+        max_digits=9, decimal_places=6, min_value=-90, max_value=90, required=False
+    )
+    device_longitude = serializers.DecimalField(
+        max_digits=9, decimal_places=6, min_value=-180, max_value=180, required=False
+    )
 
 
 class RatingInputSerializer(serializers.Serializer):

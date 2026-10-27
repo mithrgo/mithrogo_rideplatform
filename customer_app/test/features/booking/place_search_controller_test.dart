@@ -150,6 +150,54 @@ void main() {
     });
   });
 
+  group('when the mapped-feature server is down', () {
+    test('"rail" falls back to a text search for "Railway station" and still shows results', () async {
+      final text = _FakeText((query, _, _) async =>
+          query == 'Railway station' ? [_place('node:1', 'Nizamabad Railway Station', _nearMetres)] : []);
+      final features = _FakeFeatures((_, _, _) async =>
+          throw const PlaceSearchException('Nearby places service is unavailable (HTTP 502).'));
+      final container = _container(text: text, features: features, gps: _Gps(fix: _gpsOrigin));
+      final search = _search(container);
+
+      search.onQueryChanged('rail');
+      await _settle();
+
+      final state = _state(container);
+      expect(state.status, PlaceSearchStatus.loaded);
+      expect(state.nearby.map((p) => p.id), ['node:1']);
+    });
+  });
+
+  group('a rider outside the city', () {
+    test('searches around the city centre, not the far-away GPS fix, and says so', () async {
+      const farAway = LatLng(latitude: 17.3850, longitude: 78.4867); // Hyderabad, about 150 km away
+      final text = _FakeText((_, _, _) async => [_place('node:1', 'Nizamabad Railway Station', _nearMetres)]);
+      final features = _FakeFeatures((_, _, _) async => []);
+      final container = _container(text: text, features: features, gps: _Gps(fix: farAway));
+      final search = _search(container);
+
+      search.onQueryChanged('railway');
+      await _settle();
+
+      expect(text.calls.single.origin, nizamabadCenter);
+      expect(features.calls.single.origin, nizamabadCenter);
+      expect(_state(container).notice, contains('outside the service area'));
+    });
+
+    test('a rider inside the city keeps the GPS origin and sees no notice', () async {
+      final text = _FakeText((_, _, _) async => [_place('node:1', 'Railway Station', _nearMetres)]);
+      final features = _FakeFeatures((_, _, _) async => []);
+      final container = _container(text: text, features: features, gps: _Gps(fix: _gpsOrigin));
+      final search = _search(container);
+
+      search.onQueryChanged('railway');
+      await _settle();
+
+      expect(text.calls.single.origin, _gpsOrigin);
+      expect(_state(container).notice, isNull);
+    });
+  });
+
   group('missing GPS is never shown as Nizamabad', () {
     for (final failure in LocationFailure.values) {
       test('a nearby search with GPS $failure needs a location and calls no service', () async {
@@ -333,19 +381,23 @@ void main() {
       expect(text.calls.single.scope, SearchScope.wide);
     });
 
-    test('a named city search does not reorder results by distance from the GPS position', () async {
+    test('a named place lists matches near the rider first, then the rest of India in the search order', () async {
       final text = _FakeText((_, _, _) async => [
-            _place('node:far', 'Railway Station', 800000),
-            _place('node:near', 'Railway Station', 1000),
+            _place('node:far', 'Venu', 800000),
+            _place('node:near', 'Venu Mall', 1000),
           ]);
       final features = _FakeFeatures((_, _, _) async => []);
       final container = _container(text: text, features: features, gps: _Gps(fix: _gpsOrigin));
       final search = _search(container);
 
-      search.onQueryChanged('railway station hyderabad');
+      search.onQueryChanged('venu');
       await _settle();
 
-      expect(_state(container).beyond.map((p) => p.id), ['node:far', 'node:near']);
+      final state = _state(container);
+      expect(state.nearby.map((p) => p.id), ['node:near']);
+      expect(state.beyond.map((p) => p.id), ['node:far'], reason: 'a place already listed nearby is not repeated');
+      expect(text.calls.map((c) => c.scope).toSet(), {SearchScope.nearby, SearchScope.wide});
+      expect(text.calls.every((c) => c.origin == _gpsOrigin), isTrue, reason: 'both searches are ranked toward the rider');
     });
   });
 

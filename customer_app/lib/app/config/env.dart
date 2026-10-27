@@ -46,6 +46,13 @@ class Env {
   /// Add a contact address for production.
   static const String searchUserAgent = 'MithrGo-CustomerApp/1.0';
 
+  /// Radius, in metres, of the main service area around the city centre. Keep it equal to the
+  /// "service area radius" in the backend's platform config.
+  static const int serviceAreaRadiusMeters = int.fromEnvironment(
+    'SERVICE_AREA_RADIUS_METERS',
+    defaultValue: 20000,
+  );
+
   /// Radius, in metres, of the nearby search around the rider's GPS position.
   /// Results beyond it are only shown after the rider chooses to expand the search.
   static const int localSearchRadiusMeters = int.fromEnvironment(

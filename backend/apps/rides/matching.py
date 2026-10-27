@@ -95,5 +95,11 @@ def advance(ride):
     if ride.status != RideStatus.SEARCHING:
         return
     offer_next(ride)
-    if not RideOffer.objects.filter(ride=ride, status=OfferStatus.PENDING).exists():
+    if RideOffer.objects.filter(ride=ride, status=OfferStatus.PENDING).exists():
+        return
+    config = PlatformConfig.load()
+    exhausted = RideOffer.objects.filter(ride=ride).count() >= config.max_offer_attempts
+    searched_for = (now - ride.created_at).total_seconds()
+    # With nobody eligible right now, keep searching (each poll retries) until the search window closes.
+    if exhausted or searched_for >= config.search_timeout_seconds:
         services.cancel_ride(ride, actor=None, reason="NO_CAPTAIN_AVAILABLE")

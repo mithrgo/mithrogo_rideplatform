@@ -7,7 +7,9 @@ class ApiEndpoints {
   static const refresh = 'auth/refresh/';
   static const logout = 'auth/logout/';
   static const me = 'auth/me/';
+  static const deleteAccount = 'auth/delete-account/';
   static const customerProfile = 'customers/profile/';
+  static const quickPlaces = 'customers/quick-places/';
   static const rideEstimate = 'rides/estimate/';
   static const rides = 'rides/';
 

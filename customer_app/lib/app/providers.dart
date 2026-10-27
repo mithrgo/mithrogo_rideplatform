@@ -2,10 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/geocoding/nearby_feature_service.dart';
 import '../core/geocoding/place_search_service.dart';
+import '../core/geocoding/place_identity.dart';
 import '../core/location/lat_lng.dart';
 import '../core/location/location_service.dart';
 import '../core/network/api_client.dart';
 import '../core/routing/route_service.dart';
+import '../core/location/place.dart';
+import '../core/storage/recent_places_storage.dart';
 import '../core/storage/token_storage.dart';
 import '../features/auth/application/session_controller.dart';
 import '../features/auth/data/auth_repository.dart';
@@ -18,6 +21,31 @@ import '../features/support/data/support_repository.dart';
 /// Composition root: providers shared across features.
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
+
+final recentPlacesStorageProvider = Provider<RecentPlacesStorage>((ref) => RecentPlacesStorage());
+
+/// Recently chosen pickup and drop places, newest first.
+class RecentPlacesController extends Notifier<List<Place>> {
+  @override
+  List<Place> build() {
+    ref.read(recentPlacesStorageProvider).read().then((places) {
+      // A place chosen before the saved list finished loading stays on top.
+      state = dedupePlaces([...state, ...places]).take(RecentPlacesStorage.maxPlaces).toList();
+    });
+    return const [];
+  }
+
+  Future<void> remember(Place place) async {
+    state = await ref.read(recentPlacesStorageProvider).add(place);
+  }
+
+  Future<void> clear() async {
+    state = const [];
+    await ref.read(recentPlacesStorageProvider).clear();
+  }
+}
+
+final recentPlacesProvider = NotifierProvider<RecentPlacesController, List<Place>>(RecentPlacesController.new);
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
