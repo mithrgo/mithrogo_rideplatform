@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/geocoding/nearby_feature_service.dart';
+import '../core/geocoding/place_search_service.dart';
 import '../core/location/lat_lng.dart';
 import '../core/location/location_service.dart';
 import '../core/network/api_client.dart';
+import '../core/routing/route_service.dart';
 import '../core/storage/token_storage.dart';
 import '../features/auth/application/session_controller.dart';
 import '../features/auth/data/auth_repository.dart';
@@ -48,8 +51,26 @@ final customerProfileProvider = FutureProvider.autoDispose<CustomerProfile>((ref
   return ref.watch(profileRepositoryProvider).fetch();
 });
 
-final locationServiceProvider = Provider<LocationService>((ref) => MockLocationService());
+final locationServiceProvider = Provider<LocationService>((ref) => GeolocatorLocationService());
 
 final currentLocationProvider = FutureProvider.autoDispose<LatLng>((ref) {
   return ref.watch(locationServiceProvider).currentLocation();
+});
+
+final routeServiceProvider = Provider<RouteService>((ref) {
+  final service = OsrmRouteService();
+  ref.onDispose(service.close);
+  return service;
+});
+
+final placeSearchServiceProvider = Provider<PlaceSearchService>((ref) {
+  final service = NominatimPlaceSearchService();
+  ref.onDispose(service.close);
+  return service;
+});
+
+final nearbyFeatureServiceProvider = Provider<NearbyFeatureService>((ref) {
+  final service = OverpassNearbyFeatureService();
+  ref.onDispose(service.close);
+  return service;
 });

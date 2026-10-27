@@ -8,6 +8,8 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>MithrGo</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MithrGo uses your location to set your pickup point and show it on the map.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>tel</string>

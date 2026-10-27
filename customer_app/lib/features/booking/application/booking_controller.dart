@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/location/place.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/routing/ride_distance_policy.dart';
 import '../../ride/models/ride.dart';
 import '../../ride/models/ride_options.dart';
 
@@ -116,6 +117,7 @@ class BookingController extends Notifier<BookingState> {
       throw StateError('Choose a drop location first.');
     }
     final pickup = await _origin();
+    await _ensureWithinRideLimit(pickup, drop);
     final ride = await ref.read(rideRepositoryProvider).create(
           pickup: pickup,
           drop: drop,
@@ -136,6 +138,8 @@ class BookingController extends Notifier<BookingState> {
     state = state.copyWith(estimating: true, clearError: true);
     try {
       final origin = await _origin();
+      // Over-limit or unroutable trips never reach the fare endpoint.
+      await _ensureWithinRideLimit(origin, drop);
       final repository = ref.read(rideRepositoryProvider);
       final results = await Future.wait(VehicleType.values.map((vehicle) => repository.estimate(
             vehicleType: vehicle,
@@ -152,6 +156,12 @@ class BookingController extends Notifier<BookingState> {
       if (request != _estimateRequest) return;
       state = state.copyWith(estimating: false, error: userMessage(error));
     }
+  }
+
+  /// Checks the driving distance from the pickup to the drop against the ride limit.
+  Future<void> _ensureWithinRideLimit(Place origin, Place drop) async {
+    final route = await ref.read(routeServiceProvider).route(from: origin.latLng, to: drop.latLng);
+    ensureWithinRideLimit(route.distanceMeters);
   }
 
   Future<Place> _origin() async {

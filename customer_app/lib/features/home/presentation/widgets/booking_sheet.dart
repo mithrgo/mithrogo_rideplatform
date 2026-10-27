@@ -9,6 +9,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../booking/application/booking_controller.dart';
+import '../../../booking/application/booking_route_provider.dart';
 import '../../../ride/application/ride_providers.dart';
 import '../../../ride/models/ride_options.dart';
 import '../../../../shared/widgets/sheet_container.dart';
@@ -83,6 +84,8 @@ class _BookingSheetState extends ConsumerState<BookingSheet> {
             onChange: () => context.push(AppRoutes.search),
             onClear: notifier.clearDrop,
           ),
+          const SizedBox(height: 8),
+          const _RouteSummary(),
           const SizedBox(height: 16),
           Text('Choose a ride', style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
@@ -133,6 +136,48 @@ class _BookingSheetState extends ConsumerState<BookingSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Driving distance and time from OSRM. The time is an estimate, not a live-traffic ETA.
+class _RouteSummary extends ConsumerWidget {
+  const _RouteSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final route = ref.watch(bookingRouteProvider);
+
+    return route.when(
+      loading: () => Row(
+        children: [
+          const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 10),
+          Text('Finding the driving route…', style: theme.textTheme.bodySmall),
+        ],
+      ),
+      error: (error, _) => Row(
+        children: [
+          Expanded(
+            child: Text(
+              userMessage(error),
+              style: const TextStyle(color: AppColors.danger),
+            ),
+          ),
+          TextButton(
+            onPressed: () => ref.invalidate(bookingRouteProvider),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+      data: (result) {
+        if (result == null) return const SizedBox.shrink();
+        return Text(
+          '${result.distanceLabel} · about ${result.durationLabel} (estimate)',
+          style: theme.textTheme.bodySmall,
+        );
+      },
     );
   }
 }

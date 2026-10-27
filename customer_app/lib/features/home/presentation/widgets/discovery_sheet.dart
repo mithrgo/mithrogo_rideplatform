@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
-import '../../../../core/location/mock_places.dart';
-import '../../../../core/location/place.dart';
 import '../../../../shared/widgets/sheet_container.dart';
 
-/// Shown before a destination is chosen: greeting, search, and recent places.
+/// Shown before a destination is chosen: greeting and the search entry point.
+/// Destinations come from a live search, so there is no fixed list here.
 class DiscoverySheet extends StatelessWidget {
   const DiscoverySheet({
     super.key,
     required this.firstName,
     required this.onSearchTap,
-    required this.onPlaceTap,
   });
 
   final String firstName;
   final VoidCallback onSearchTap;
-  final ValueChanged<Place> onPlaceTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final recent = mockPlaces.take(3).toList();
 
     return SheetContainer(
       child: Column(
@@ -53,28 +49,11 @@ class DiscoverySheet extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          for (final place in recent)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.history, color: AppColors.ink, size: 20),
-              ),
-              title: Text(place.name, style: theme.textTheme.bodyLarge),
-              subtitle: Text(
-                place.address,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall,
-              ),
-              onTap: () => onPlaceTap(place),
-            ),
+          const SizedBox(height: 8),
+          Text(
+            'Tip: tap the map to drop a pin instead.',
+            style: theme.textTheme.bodySmall,
+          ),
         ],
       ),
     );

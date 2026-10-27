@@ -7,15 +7,17 @@ import '../../../app/router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/location/lat_lng.dart';
 import '../../../core/location/place.dart';
-import '../../../shared/widgets/map_canvas.dart';
+import '../../../shared/widgets/ride_map.dart';
 import '../../auth/application/session_controller.dart';
 import '../../booking/application/booking_controller.dart';
+import '../../booking/application/booking_route_provider.dart';
 import '../../notifications/application/notification_providers.dart';
 import '../../ride/application/ride_providers.dart';
 import '../../ride/models/ride.dart';
 import '../../ride/models/ride_options.dart';
 import 'widgets/booking_sheet.dart';
 import 'widgets/discovery_sheet.dart';
+import 'widgets/location_banner.dart';
 
 /// Map-first home, like Uber and Rapido. The bottom sheet changes with the booking state:
 /// discovery (pick a destination), then booking (route, vehicle, payment, confirm).
@@ -26,18 +28,29 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final booking = ref.watch(bookingControllerProvider);
     final user = ref.watch(sessionControllerProvider).user;
-    final current = ref.watch(currentLocationProvider).valueOrNull;
+    final location = ref.watch(currentLocationProvider);
+    final current = location.valueOrNull;
+    final route = ref.watch(bookingRouteProvider).valueOrNull;
     final activeRide = ref.watch(activeRideProvider).valueOrNull;
     final unread = ref.watch(unreadNotificationCountProvider);
 
-    final pickup = booking.pickup != null ? _toLatLng(booking.pickup!) : current;
-    final drop = booking.drop != null ? _toLatLng(booking.drop!) : null;
+    // Without a chosen pickup, the device position is the pickup.
+    final pickup = booking.pickup?.latLng ?? current;
+    final drop = booking.drop?.latLng;
     final hasDrop = booking.drop != null;
 
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: MapCanvas(pickup: pickup, drop: drop)),
+          Positioned.fill(
+            child: RideMap(
+              pickup: pickup,
+              drop: drop,
+              deviceLocation: current,
+              route: route,
+              onMapTap: (point) => _pickDestination(ref, _pinnedPlace(point)),
+            ),
+          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -63,6 +76,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  if (location.hasError && booking.pickup == null) ...[
+                    const SizedBox(height: 12),
+                    LocationBanner(error: location.error!),
+                  ],
                   if (activeRide != null) ...[
                     const SizedBox(height: 12),
                     _ActiveRideBanner(
@@ -81,7 +98,6 @@ class HomeScreen extends ConsumerWidget {
                 : DiscoverySheet(
                     firstName: user?.firstName ?? '',
                     onSearchTap: () => context.push(AppRoutes.search),
-                    onPlaceTap: (place) => _pickDestination(ref, place),
                   ),
           ),
         ],
@@ -93,8 +109,16 @@ class HomeScreen extends ConsumerWidget {
     return ref.read(bookingControllerProvider.notifier).setDrop(place);
   }
 
-  static LatLng _toLatLng(Place place) {
-    return LatLng(latitude: place.latitude, longitude: place.longitude);
+  /// A drop point tapped on the map. Reverse geocoding is not used, so the address is the coordinates.
+  static Place _pinnedPlace(LatLng point) {
+    final lat = point.latitude.toStringAsFixed(5);
+    final lng = point.longitude.toStringAsFixed(5);
+    return Place(
+      name: 'Pinned location',
+      address: 'Pinned on map ($lat, $lng)',
+      latitude: point.latitude,
+      longitude: point.longitude,
+    );
   }
 }
 

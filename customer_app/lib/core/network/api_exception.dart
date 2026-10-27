@@ -1,6 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../location/location_service.dart';
+import '../geocoding/place_search_service.dart';
+import '../routing/ride_distance_policy.dart';
+import '../routing/route_service.dart';
+
 /// A failed API call, with the backend's message converted for display.
 ///
 /// The backend returns `{"detail": "...", "code": "..."}` for rule errors and
@@ -79,5 +84,9 @@ class ApiException implements Exception {
 /// Turns any error from a repository call into a message that is safe to show.
 String userMessage(Object error) {
   if (error is ApiException) return error.message;
+  if (error is LocationException) return error.message;
+  if (error is RouteException) return error.message;
+  if (error is RideTooFarException) return error.message;
+  if (error is PlaceSearchException) return error.message;
   return 'Something went wrong. Please try again.';
 }
