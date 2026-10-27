@@ -5,90 +5,69 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MithrGo – Bike and Auto rides, fair for riders and captains</title>
 <meta name="description" content="Book a bike or auto ride in minutes. Captains choose a simple plan: ₹30 a day, or the fare of just 1 ride a day.">
+<meta name="theme-color" content="#111111">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta property="og:title" content="MithrGo – Fair rides for riders and captains">
+<meta property="og:description" content="Bike and Auto rides with the fare shown up front. Simple plans for captains.">
+<meta property="og:image" content="assets/logo.png">
 <style>
   :root{
-    --bg:#ffffff; --bg-alt:#f5f7fa; --text:#14181f; --muted:#5b6573;
-    --brand:#0b8f5a; --brand-dark:#086f46; --brand-soft:#e3f5ec;
-    --card:#ffffff; --border:#e3e7ee; --radius:14px;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#0e1116; --bg-alt:#151a22; --text:#eef1f6; --muted:#9aa5b5;
-      --brand:#2bc884; --brand-dark:#1fa56b; --brand-soft:#12261d;
-      --card:#171c25; --border:#262d39;
-    }
+    --brand:#ffc629; --brand-dark:#e0a800; --ink:#111111; --ink-2:#1b1b1d; --ink-3:#2b2b2e;
+    --bg:#ffffff; --surface:#f4f4f5; --card:#ffffff; --line:#e6e6e8;
+    --text:#111111; --muted:#6b6b70; --on-dark:#f4f4f5; --muted-dark:#a1a1a8;
+    --radius:18px; --shadow:0 10px 30px rgba(17,17,17,.08);
+    --scene-sky:#1d2330; --scene-sun:#ffc629; --scene-city:#2a3345; --scene-road:#15171c;
+    --scene-lane:#8a94a3; --scene-glass:#9fd0e8; --scene-cloud:#2c3547; --scene-ink:#f4f4f5;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+  html{scroll-behavior:smooth;scroll-padding-top:80px}
+  body{margin:0;font:16px/1.6 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
   a{color:inherit}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
-  header.nav{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border)}
-  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .logo{font-weight:800;font-size:1.25rem;text-decoration:none;color:var(--brand)}
-  .nav nav{display:flex;gap:22px;align-items:center}
-  .nav nav a{text-decoration:none;color:var(--muted);font-size:.95rem}
-  .nav nav a:hover{color:var(--text)}
-  .nav nav a.btn-primary,.nav nav a.btn-primary:hover{color:#fff}
-  .btn{display:inline-block;padding:12px 22px;border-radius:999px;font-weight:600;text-decoration:none;border:1px solid transparent}
-  .btn-primary{background:var(--brand);color:#fff}
-  .btn-primary:hover{background:var(--brand-dark)}
-  .btn-ghost{border-color:var(--border);color:var(--text)}
-  .btn-ghost:hover{background:var(--bg-alt)}
-  .hero{padding:72px 0 56px}
-  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
-  .eyebrow{display:inline-block;background:var(--brand-soft);color:var(--brand);font-weight:600;font-size:.85rem;padding:4px 12px;border-radius:999px}
-  h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1.15;margin:16px 0}
-  .lead{color:var(--muted);font-size:1.15rem;max-width:520px}
-  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-  .hero-card{background:var(--bg-alt);border:1px solid var(--border);border-radius:20px;padding:24px}
-  .route{display:grid;gap:14px}
-  .stop{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
-  .dot{width:12px;height:12px;border-radius:50%;background:var(--brand);flex:none}
-  .dot.drop{border-radius:3px;background:var(--text)}
-  .stop small{display:block;color:var(--muted)}
-  .fare{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-weight:600}
-  .fare span:last-child{color:var(--brand);font-size:1.3rem}
-  section{padding:64px 0}
-  section.alt{background:var(--bg-alt)}
-  h2{font-size:clamp(1.5rem,3.5vw,2.1rem);margin:0 0 8px}
-  .sub{color:var(--muted);margin:0 0 36px;max-width:620px}
-  .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
-  .card h3{margin:10px 0 6px;font-size:1.05rem}
-  .card p{margin:0;color:var(--muted);font-size:.95rem}
-  .num{width:34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700}
-  .split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-  .panel{border:1px solid var(--border);border-radius:var(--radius);padding:28px;background:var(--card)}
-  .panel.hl{background:var(--brand-soft);border-color:transparent}
-  .panel ul{padding-left:20px;color:var(--muted)}
-  .panel li{margin:6px 0}
-  details{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px}
-  summary{cursor:pointer;font-weight:600}
-  details p{color:var(--muted);margin:10px 0 0}
-  .download{text-align:center}
-  .download .cta{justify-content:center}
-  footer{border-top:1px solid var(--border);padding:32px 0;color:var(--muted);font-size:.9rem}
-  footer .wrap{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between}
-  footer a{margin-right:16px;text-decoration:none}
-  @media (max-width:760px){
-    .hero .wrap,.split{grid-template-columns:1fr}
-    .nav nav a:not(.btn){display:none}
-    .hero{padding-top:40px}
-  }
+  img{max-width:100%;display:block}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
 
-  /* hero animation */
-  :root{
-    --scene-sky:#dff3ea; --scene-sun:#ffd54a; --scene-city:#b9d9ca; --scene-road:#3a414c;
-    --scene-lane:#f4f6f8; --scene-glass:#cfe9f5; --scene-cloud:#ffffff; --scene-ink:#14181f;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --scene-sky:#16241f; --scene-sun:#e9c545; --scene-city:#22362e; --scene-road:#10141a;
-      --scene-lane:#8a94a3; --scene-glass:#2c4a5c; --scene-cloud:#2a3a36; --scene-ink:#eef1f6;
-    }
-  }
-  .scene{display:block;width:100%;height:auto;border-radius:14px;margin-bottom:16px}
+  /* nav */
+  header.nav{position:fixed;inset:0 0 auto 0;z-index:20;background:rgba(17,17,17,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+  .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.2rem;text-decoration:none;color:#fff;letter-spacing:-.02em}
+  .logo img{width:34px;height:34px;border-radius:9px}
+  .logo b{color:var(--brand)}
+  .nav nav{display:flex;gap:26px;align-items:center}
+  .nav nav a{text-decoration:none;color:var(--muted-dark);font-size:.94rem;font-weight:500;transition:color .15s}
+  .nav nav a:hover{color:#fff}
+  .nav nav a.btn{color:var(--ink);padding:9px 18px}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:999px;font-weight:700;text-decoration:none;border:1.5px solid transparent;transition:transform .15s,background .15s,box-shadow .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:var(--brand);color:var(--ink);box-shadow:0 8px 22px rgba(255,198,41,.28)}
+  .btn-primary:hover{background:#ffd04d}
+  .btn-ghost{border-color:rgba(255,255,255,.28);color:#fff}
+  .btn-ghost:hover{background:rgba(255,255,255,.08)}
+  .btn-dark{background:var(--ink);color:#fff}
+  .btn-dark:hover{background:var(--ink-3)}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;background:var(--ink);color:var(--on-dark);padding:140px 0 96px}
+  .hero::before{content:"";position:absolute;width:760px;height:760px;right:-180px;top:-220px;background:radial-gradient(circle,rgba(255,198,41,.28),transparent 65%);pointer-events:none}
+  .hero::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:26px 26px;mask-image:linear-gradient(to bottom,#000,transparent 80%);-webkit-mask-image:linear-gradient(to bottom,#000,transparent 80%);pointer-events:none}
+  .hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(255,198,41,.12);color:var(--brand);border:1px solid rgba(255,198,41,.3);font-weight:600;font-size:.84rem;padding:6px 14px;border-radius:999px}
+  .eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--brand);animation:pulse 1.8s ease-out infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,198,41,.6)}100%{box-shadow:0 0 0 10px rgba(255,198,41,0)}}
+  h1{font-size:clamp(2.3rem,5.4vw,3.9rem);line-height:1.06;margin:20px 0 18px;letter-spacing:-.035em;font-weight:800}
+  h1 em{font-style:normal;color:var(--brand)}
+  .lead{color:var(--muted-dark);font-size:1.15rem;max-width:520px}
+  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}
+  .hero-points{display:flex;gap:22px;flex-wrap:wrap;margin:34px 0 0;padding:0;list-style:none;color:var(--muted-dark);font-size:.9rem}
+  .hero-points li::before{content:"✓";color:var(--brand);font-weight:800;margin-right:7px}
+
+  /* phone mockup */
+  .phone-stage{position:relative;display:flex;justify-content:center}
+  .phone{width:300px;background:#000;border-radius:44px;padding:11px;border:2px solid #34343a;box-shadow:0 40px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04);transform:rotate(3deg)}
+  .screen{background:#f4f4f5;border-radius:34px;overflow:hidden;color:var(--text)}
+  .notch{width:92px;height:22px;background:#000;border-radius:0 0 14px 14px;margin:0 auto}
+  .scene{display:block;width:100%;height:auto}
   .scene .spin{transform-origin:0 0;animation:spin .7s linear infinite}
   .scene .bounce{animation:bounce .45s ease-in-out infinite alternate}
   .scene .run{animation:run linear infinite}
@@ -105,8 +84,118 @@
   @keyframes dash{to{stroke-dashoffset:-36}}
   @keyframes drift{from{transform:translateX(-80px)}to{transform:translateX(560px)}}
   @keyframes flicker{0%,100%{opacity:.15}50%{opacity:.6}}
+  .sheet{background:#fff;border-radius:22px 22px 0 0;margin-top:-14px;position:relative;padding:16px 16px 18px}
+  .sheet h4{margin:0 0 12px;font-size:1rem}
+  .stop{display:flex;gap:12px;align-items:center;background:var(--surface);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:.88rem;font-weight:600}
+  .stop small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 3px rgba(255,198,41,.3);flex:none}
+  .dot.drop{border-radius:3px;background:var(--ink);box-shadow:none}
+  .rides{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+  .ride{border:1.5px solid var(--line);border-radius:12px;padding:10px;font-size:.8rem;font-weight:700}
+  .ride.sel{border-color:var(--ink);background:#fffbea}
+  .ride small{display:block;color:var(--muted);font-weight:500}
+  .book{display:block;text-align:center;background:var(--ink);color:#fff;border-radius:12px;padding:12px;font-weight:700;font-size:.9rem}
+  .float{position:absolute;background:#fff;color:var(--text);border-radius:14px;padding:10px 14px;font-size:.82rem;font-weight:700;box-shadow:var(--shadow);display:flex;gap:9px;align-items:center;animation:floaty 5s ease-in-out infinite}
+  .float small{display:block;color:var(--muted);font-weight:500;font-size:.72rem}
+  .float .ico{width:32px;height:32px;border-radius:50%;background:var(--brand);display:grid;place-items:center;font-size:1rem}
+  .float.f1{left:-24px;top:70px}
+  .float.f2{right:-8px;bottom:60px;animation-delay:-2.4s}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+  /* trust strip */
+  .strip{background:var(--brand);color:var(--ink)}
+  .strip .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding-top:22px;padding-bottom:22px}
+  .strip div{font-weight:700;font-size:.95rem;display:flex;gap:10px;align-items:center}
+  .strip span{font-size:1.4rem}
+
+  /* sections */
+  section{padding:92px 0}
+  section.alt{background:var(--surface)}
+  .kicker{display:inline-block;font-size:.8rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--brand-dark);margin-bottom:10px}
+  h2{font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.12;margin:0 0 12px;letter-spacing:-.03em;font-weight:800}
+  .sub{color:var(--muted);margin:0 0 44px;max-width:620px;font-size:1.08rem}
+  .grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px;transition:transform .2s,box-shadow .2s,border-color .2s}
+  .card:hover{transform:translateY(-5px);box-shadow:var(--shadow);border-color:var(--brand)}
+  .card h3{margin:16px 0 6px;font-size:1.1rem;letter-spacing:-.01em}
+  .card p{margin:0;color:var(--muted);font-size:.95rem}
+  .icon{width:48px;height:48px;border-radius:14px;background:var(--ink);color:var(--brand);display:grid;place-items:center;font-size:1.35rem}
+  .steps .card{position:relative;overflow:hidden}
+  .steps .num{position:absolute;right:16px;top:6px;font-size:4.4rem;font-weight:800;line-height:1;color:var(--surface);letter-spacing:-.05em;pointer-events:none}
+  .steps .card>*{position:relative}
+
+  /* captains */
+  .dark{background:var(--ink);color:var(--on-dark)}
+  .dark .kicker{color:var(--brand)}
+  .dark .sub{color:var(--muted-dark)}
+  .split{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+  .panel{border-radius:24px;padding:34px;background:var(--ink-2);border:1px solid rgba(255,255,255,.08)}
+  .panel h3{margin:0 0 18px;font-size:1.3rem;letter-spacing:-.02em}
+  .plan{border-radius:16px;padding:20px;margin-bottom:14px;background:var(--ink-3);border:1px solid rgba(255,255,255,.06)}
+  .plan:last-child{margin-bottom:0}
+  .plan.feat{background:var(--brand);color:var(--ink);border:none}
+  .plan .tag{font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+  .plan .price{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;margin:2px 0 8px}
+  .plan p{margin:0;font-size:.92rem;color:var(--muted-dark)}
+  .plan.feat p{color:#3d3200}
+  .timeline{list-style:none;margin:0 0 26px;padding:0;counter-reset:s}
+  .timeline li{position:relative;padding:0 0 18px 46px;color:var(--muted-dark);counter-increment:s}
+  .timeline li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--ink);font-weight:800;font-size:.85rem;display:grid;place-items:center}
+  .timeline li::after{content:"";position:absolute;left:14px;top:32px;bottom:2px;width:2px;background:rgba(255,255,255,.12)}
+  .timeline li:last-child{padding-bottom:0}
+  .timeline li:last-child::after{display:none}
+  .perks{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+  .chip{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;font-size:.85rem;color:var(--on-dark)}
+
+  /* faq */
+  details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 22px;margin-bottom:12px;transition:border-color .15s}
+  details[open]{border-color:var(--ink)}
+  summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:16px;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";font-size:1.5rem;line-height:1;color:var(--brand-dark);transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{color:var(--muted);margin:12px 0 0}
+  .faq{max-width:780px}
+
+  /* download */
+  .download{background:var(--brand);color:var(--ink);text-align:center;position:relative;overflow:hidden}
+  .download::before{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:rgba(255,255,255,.22);left:-160px;bottom:-260px}
+  .download::after{content:"";position:absolute;width:380px;height:380px;border-radius:50%;background:rgba(17,17,17,.07);right:-120px;top:-180px}
+  .download .wrap{position:relative;z-index:1}
+  .download .sub{color:#4a3d00;margin-inline:auto}
+  .download .cta{justify-content:center;margin-top:0}
+  .store{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:14px;padding:12px 24px;text-decoration:none;text-align:left;transition:transform .15s}
+  .store:hover{transform:translateY(-3px)}
+  .store small{display:block;font-size:.72rem;opacity:.7;line-height:1.2}
+  .store b{font-size:1.05rem;line-height:1.2}
+  .store span{font-size:1.6rem}
+  .download .note{margin:22px 0 0;font-size:.92rem;color:#4a3d00}
+
+  footer{background:var(--ink);color:var(--muted-dark);padding:44px 0 34px;font-size:.92rem}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:center}
+  footer .logo{font-size:1.1rem}
+  footer a{text-decoration:none;margin-left:20px}
+  footer a:hover{color:#fff}
+  footer .copy{width:100%;border-top:1px solid rgba(255,255,255,.1);padding-top:20px;font-size:.85rem}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (max-width:880px){
+    .hero{padding:112px 0 64px}
+    .hero .wrap,.split{grid-template-columns:1fr}
+    .phone{transform:none}
+    .phone-stage{margin-top:12px}
+    .strip .wrap{grid-template-columns:1fr 1fr}
+    .nav nav a:not(.btn){display:none}
+    section{padding:64px 0}
+  }
+  @media (max-width:420px){.float{display:none}.strip .wrap{grid-template-columns:1fr}}
   @media (prefers-reduced-motion: reduce){
-    .scene *{animation:none !important}
+    *{animation:none !important;transition:none !important}
+    html{scroll-behavior:auto}
+    .reveal{opacity:1;transform:none}
     .scene .run.bike{transform:translateX(120px)}
     .scene .run.auto{transform:translateX(280px)}
   }
@@ -116,7 +205,7 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="logo" href="#">MithrGo</a>
+    <a class="logo" href="#"><img src="assets/logo.png" alt="" width="34" height="34"><span>Mithr<b>Go</b></span></a>
     <nav>
       <a href="#how">How it works</a>
       <a href="#captains">Drive with us</a>
@@ -131,15 +220,26 @@
   <section class="hero">
     <div class="wrap">
       <div>
-        <span class="eyebrow">Now starting in our first city</span>
-        <h1>Quick bike and auto rides. Fair for riders and captains.</h1>
-        <p class="lead">Book a bike or auto in a few taps, see your captain arrive on the map, and pay a clear fare. Captains choose a simple plan: a small daily fee, or give the fare of just 1 ride a day.</p>
+        <span class="eyebrow"><i></i>Now starting in our first city</span>
+        <h1>Quick bike and auto rides. <em>Fair for everyone.</em></h1>
+        <p class="lead">Book a bike or auto in a few taps, watch your captain arrive on the map, and pay a clear fare. Captains choose a simple plan: a small daily fee, or the fare of just 1 ride a day.</p>
         <div class="cta">
-          <a class="btn btn-primary" href="#download">Book a ride</a>
+          <a class="btn btn-primary" href="#download">Book a ride →</a>
           <a class="btn btn-ghost" href="#captains">Become a captain</a>
         </div>
+        <ul class="hero-points">
+          <li>Fare shown before you book</li>
+          <li>Pay online or in cash</li>
+          <li>Verified captains</li>
+        </ul>
       </div>
-      <div class="hero-card" aria-hidden="true">
+
+      <div class="phone-stage" aria-hidden="true">
+        <div class="float f1"><span class="ico">⭐</span><div>Captain arriving<small>Follow live on the map</small></div></div>
+        <div class="float f2"><span class="ico">₹</span><div>Fare up front<small>Never changes mid-trip</small></div></div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
         <svg class="scene" viewBox="0 0 480 270" role="img" aria-label="A bike and an auto driving along a city road">
         <rect width="480" height="270" fill="var(--scene-sky)"/>
         <circle cx="414" cy="48" r="24" fill="var(--scene-sun)"/>
@@ -211,109 +311,147 @@
           </g>
         </g>
       </svg>
-        <div class="route">
-          <div class="stop"><span class="dot"></span><div><small>Pickup</small>Your current location</div></div>
-          <div class="stop"><span class="dot drop"></span><div><small>Drop</small>Where to?</div></div>
+            <div class="sheet">
+              <h4>Where to?</h4>
+              <div class="stop"><span class="dot"></span><div><small>Pickup</small>Your current location</div></div>
+              <div class="stop"><span class="dot drop"></span><div><small>Drop</small>Where to?</div></div>
+              <div class="rides">
+                <div class="ride sel">🏍️ Bike<small>Fastest</small></div>
+                <div class="ride">🛺 Auto<small>Comfortable</small></div>
+              </div>
+              <span class="book">Book ride</span>
+            </div>
+          </div>
         </div>
-        <div class="fare"><span>Estimated fare</span><span>Shown before you book</span></div>
       </div>
     </div>
   </section>
+
+  <div class="strip">
+    <div class="wrap">
+      <div><span>🏍️</span>Bike &amp; Auto rides</div>
+      <div><span>💰</span>Fare shown up front</div>
+      <div><span>📍</span>Live ride tracking</div>
+      <div><span>🛡️</span>Verified captains</div>
+    </div>
+  </div>
 
   <section id="how" class="alt">
     <div class="wrap">
-      <h2>How it works</h2>
-      <p class="sub">From request to destination in four simple steps.</p>
-      <div class="grid">
-        <div class="card"><div class="num">1</div><h3>Set pickup and drop</h3><p>Choose where you are and where you want to go.</p></div>
-        <div class="card"><div class="num">2</div><h3>See the fare</h3><p>Get an estimated fare up front, before you request.</p></div>
-        <div class="card"><div class="num">3</div><h3>Meet your captain</h3><p>A nearby captain accepts. See their name, rating and vehicle, and follow them on the map as they arrive.</p></div>
-        <div class="card"><div class="num">4</div><h3>Ride, pay, rate</h3><p>Pay online, or in cash to your captain, then rate your ride.</p></div>
+      <span class="kicker">How it works</span>
+      <h2>From request to destination in four steps.</h2>
+      <p class="sub reveal">No surprises. You know the fare, the captain and the route before you go.</p>
+      <div class="grid steps">
+        <div class="card reveal"><span class="num">1</span><div class="icon">📍</div><h3>Set pickup and drop</h3><p>Choose where you are and where you want to go.</p></div>
+        <div class="card reveal"><span class="num">2</span><div class="icon">🏷️</div><h3>See the fare</h3><p>Get an estimated fare up front, before you request.</p></div>
+        <div class="card reveal"><span class="num">3</span><div class="icon">🙋</div><h3>Meet your captain</h3><p>A nearby captain accepts. See their name, rating and vehicle, and follow them on the map as they arrive.</p></div>
+        <div class="card reveal"><span class="num">4</span><div class="icon">⭐</div><h3>Ride, pay, rate</h3><p>Pay online, or in cash to your captain, then rate your ride.</p></div>
       </div>
     </div>
   </section>
 
-  <section id="captains">
+  <section id="captains" class="dark">
     <div class="wrap">
-      <h2>Drive with MithrGo</h2>
+      <span class="kicker">For captains</span>
+      <h2>Drive with MithrGo. Keep what you earn.</h2>
       <p class="sub">Two simple ways to pay. Pick the one that suits you.</p>
       <div class="split">
-        <div class="panel hl">
+        <div class="panel reveal">
           <h3>Choose your plan</h3>
-          <p><strong>Plan A – ₹30 a day.</strong> Pay a small fixed fee for each day you want to take rides. Everything you earn from fares is yours. Current prices are always shown in the captain app.</p>
-          <p><strong>Plan B – 1 ride a day.</strong> No daily fee. Give the fare of just 1 of your first 5 rides each day. Choose which of your first 4 rides to give, or the 5th is taken automatically. Every other ride that day is yours, even if you do 100. If a day ends with fewer than 5 rides and you haven&rsquo;t given one, you pay ₹30 and your first ride the next day is taken.</p>
-          <ul>
-            <li>Choose when to go online</li>
-            <li>See your earnings in the app</li>
-          </ul>
+          <div class="plan feat">
+            <div class="tag">Plan A</div>
+            <div class="price">₹30 a day</div>
+            <p>Pay a small fixed fee for each day you want to take rides. Everything you earn from fares is yours. Current prices are always shown in the captain app.</p>
+          </div>
+          <div class="plan">
+            <div class="tag">Plan B</div>
+            <div class="price">1 ride a day</div>
+            <p>No daily fee. Give the fare of just 1 of your first 5 rides each day. Choose which of your first 4 rides to give, or the 5th is taken automatically. Every other ride that day is yours, even if you do 100. If a day ends with fewer than 5 rides and you haven&rsquo;t given one, you pay ₹30 and your first ride the next day is taken.</p>
+          </div>
+          <div class="perks"><span class="chip">Choose when to go online</span><span class="chip">See your earnings in the app</span></div>
         </div>
-        <div class="panel">
+        <div class="panel reveal">
           <h3>Get started</h3>
-          <ul>
+          <ol class="timeline">
             <li>Sign up with your phone number</li>
             <li>Upload your driving licence and identity documents</li>
             <li>Register your vehicle; our team verifies it</li>
             <li>Get approved, then choose your plan</li>
             <li>Go online and start receiving ride requests</li>
-          </ul>
+          </ol>
           <a class="btn btn-primary" href="#download">Download the Captain app</a>
         </div>
       </div>
     </div>
   </section>
 
-  <section id="safety" class="alt">
+  <section id="safety">
     <div class="wrap">
-      <h2>Built with safety in mind</h2>
+      <span class="kicker">Safety</span>
+      <h2>Built with safety in mind.</h2>
       <p class="sub">Every ride is tracked and every captain is verified.</p>
       <div class="grid">
-        <div class="card"><h3>Verified captains</h3><p>Documents and vehicles are reviewed before a captain can take rides.</p></div>
-        <div class="card"><h3>Live ride tracking</h3><p>Follow your trip on the map from pickup to drop.</p></div>
-        <div class="card"><h3>Ratings both ways</h3><p>Customers and captains rate each ride to keep quality high.</p></div>
-        <div class="card"><h3>Support when needed</h3><p>Report an issue about any ride you were part of, right in the app.</p></div>
+        <div class="card reveal"><div class="icon">✅</div><h3>Verified captains</h3><p>Documents and vehicles are reviewed before a captain can take rides.</p></div>
+        <div class="card reveal"><div class="icon">🗺️</div><h3>Live ride tracking</h3><p>Follow your trip on the map from pickup to drop.</p></div>
+        <div class="card reveal"><div class="icon">⭐</div><h3>Ratings both ways</h3><p>Customers and captains rate each ride to keep quality high.</p></div>
+        <div class="card reveal"><div class="icon">💬</div><h3>Support when needed</h3><p>Report an issue about any ride you were part of, right in the app.</p></div>
       </div>
     </div>
   </section>
 
-  <section id="faq">
+  <section id="faq" class="alt">
     <div class="wrap">
+      <span class="kicker">FAQ</span>
       <h2>Frequently asked questions</h2>
-      <p class="sub">&nbsp;</p>
-      <details><summary>Which cities are you in?</summary><p>We are launching in one city first. More cities will follow once the service is running well.</p></details>
-      <details><summary>What vehicles are available?</summary><p>Bike and Auto rides are available at launch. More ride types will be added later.</p></details>
-      <details><summary>How do I pay for a ride?</summary><p>You see the fare before you book, and that fare does not change during the trip. Pay online in the app, or in cash to your captain when the ride is booked as a cash ride.</p></details>
-      <details><summary>Can I cancel a ride?</summary><p>Yes, you can cancel from the app until the ride starts.</p></details>
-      <details><summary>How much does a captain pay?</summary><p>Two ways: ₹30 a day, or give the fare of just 1 ride a day. With the second plan you choose which of your first 4 rides to give; if you don't, the 5th ride is taken automatically. Every other ride that day is yours. If you finish a day with fewer than 5 rides and haven't given one, the next day you pay ₹30 and your first ride is taken.</p></details>
-      <details><summary>How do I report a problem?</summary><p>Open the ride in the app and choose Help, or contact us using the email below. Our team reviews every report.</p></details>
+      <p class="sub">Quick answers about riding and driving with MithrGo.</p>
+      <div class="faq">
+        <details><summary>Which cities are you in?</summary><p>We are launching in one city first. More cities will follow once the service is running well.</p></details>
+        <details><summary>What vehicles are available?</summary><p>Bike and Auto rides are available at launch. More ride types will be added later.</p></details>
+        <details><summary>How do I pay for a ride?</summary><p>You see the fare before you book, and that fare does not change during the trip. Pay online in the app, or in cash to your captain when the ride is booked as a cash ride.</p></details>
+        <details><summary>Can I cancel a ride?</summary><p>Yes, you can cancel from the app until the ride starts.</p></details>
+        <details><summary>How much does a captain pay?</summary><p>Two ways: ₹30 a day, or give the fare of just 1 ride a day. With the second plan you choose which of your first 4 rides to give; if you don't, the 5th ride is taken automatically. Every other ride that day is yours. If you finish a day with fewer than 5 rides and haven't given one, the next day you pay ₹30 and your first ride is taken.</p></details>
+        <details><summary>How do I report a problem?</summary><p>Open the ride in the app and choose Help, or contact us using the email below. Our team reviews every report.</p></details>
+      </div>
     </div>
   </section>
 
-  <section id="download" class="alt download">
+  <section id="download" class="download">
     <div class="wrap">
       <h2>Get the app</h2>
-      <p class="sub" style="margin-inline:auto">Download the app for your role.</p>
+      <p class="sub">Download the app for your role and be on the road in minutes.</p>
       <div class="cta">
         <!-- TODO: replace # with real store links after publishing -->
-        <a class="btn btn-primary" href="#">Customer app – Google Play</a>
-        <a class="btn btn-ghost" href="#">Captain app – Google Play</a>
+        <a class="store" href="#"><span>▶</span><div><small>Customer app on</small><b>Google Play</b></div></a>
+        <a class="store" href="#"><span>▶</span><div><small>Captain app on</small><b>Google Play</b></div></a>
       </div>
-      <p class="sub" style="margin:18px auto 0">iOS apps coming soon.</p>
+      <p class="note">iOS apps coming soon.</p>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <div>© <span id="y"></span> MithrGo. All rights reserved.</div>
+    <a class="logo" href="#" style="margin:0"><img src="assets/logo.png" alt="" width="34" height="34"><span>Mithr<b>Go</b></span></a>
     <div>
       <!-- TODO: add real pages and contact email before launch -->
       <a href="privacy.html">Privacy policy</a>
       <a href="terms.html">Terms</a>
       <a href="mailto:support@example.com">support@example.com</a>
     </div>
+    <div class="copy">© <span id="y"></span> MithrGo. All rights reserved.</div>
   </div>
 </footer>
 
-<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+<script>
+document.getElementById('y').textContent = new Date().getFullYear();
+(function(){
+  var els = document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in')});return;}
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target)}});
+  },{threshold:.12});
+  els.forEach(function(e,i){e.style.transitionDelay=(i%4)*70+'ms';io.observe(e)});
+})();
+</script>
 </body>
 </html>
