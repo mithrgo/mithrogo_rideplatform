@@ -35,6 +35,8 @@ class HomeScreen extends ConsumerWidget {
                 : ListView(
                     padding: const EdgeInsets.all(20),
                     children: [
+                      for (final offer in home.offers)
+                        if (home.activeRide == null) _OfferCard(offer: offer),
                       _OnlineCard(status: status),
                       const SizedBox(height: 16),
                       if (home.activeRide != null) ...[
@@ -60,8 +62,6 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 16),
                       ],
-                      for (final offer in home.offers)
-                        if (home.activeRide == null) _OfferCard(offer: offer),
                       if (!status.eligible && !status.isOnline) _Requirements(status: status),
                       if (status.isOnline && home.offers.isEmpty && home.activeRide == null)
                         const InfoCard(child: Text('You are online. Waiting for ride requests…')),
@@ -183,23 +183,7 @@ class _OfferCard extends ConsumerStatefulWidget {
 }
 
 class _OfferCardState extends ConsumerState<_OfferCard> {
-  Timer? _ticker;
   bool _busy = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Redraws the countdown once a second.
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
 
   Future<void> _accept() async {
     setState(() => _busy = true);
@@ -216,7 +200,6 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
   @override
   Widget build(BuildContext context) {
     final offer = widget.offer;
-    final seconds = offer.secondsLeft;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -225,13 +208,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Text('New ride request', style: Theme.of(context).textTheme.titleMedium),
-                const Spacer(),
-                StatusChip(label: '${seconds}s', color: seconds <= 5 ? AppColors.danger : AppColors.info),
-              ],
-            ),
+            Text('New ride request', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             Text(formatInr(offer.fare), style: Theme.of(context).textTheme.headlineMedium),
             Text('${offer.distanceKm.toStringAsFixed(1)} km away'),
@@ -249,7 +226,7 @@ class _OfferCardState extends ConsumerState<_OfferCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(flex: 2, child: PrimaryButton(label: 'Accept', busy: _busy, onPressed: seconds > 0 ? _accept : null)),
+                Expanded(flex: 2, child: PrimaryButton(label: 'Accept', busy: _busy, onPressed: _accept)),
               ],
             ),
           ],

@@ -183,8 +183,12 @@ if not SMS_PROVIDER:
 MSG91_AUTH_KEY = os.environ.get("MSG91_AUTH_KEY", "")
 MSG91_TEMPLATE_ID = os.environ.get("MSG91_TEMPLATE_ID", "")
 
-# Payments. The mock provider is used until a real gateway is integrated.
-PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "apps.payments.providers.MockPaymentProvider")
+# Payments. The mock provider is for development only; with DEBUG off a provider must be named explicitly.
+PAYMENT_PROVIDER = os.environ.get(
+    "PAYMENT_PROVIDER", "apps.payments.providers.MockPaymentProvider" if DEBUG else ""
+)
+if not PAYMENT_PROVIDER:
+    raise ImproperlyConfigured("PAYMENT_PROVIDER must be set when DJANGO_DEBUG is off.")
 PAYMENT_WEBHOOK_SECRET = os.environ.get("PAYMENT_WEBHOOK_SECRET", "")
 
 LOGGING = {
@@ -200,3 +204,7 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Destination search (core/place_search.py). Nominatim's usage policy requires an identifying User-Agent.
+NOMINATIM_BASE_URL = os.environ.get("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org")
+NOMINATIM_USER_AGENT = os.environ.get("NOMINATIM_USER_AGENT", "MithrGo-Backend/1.0")

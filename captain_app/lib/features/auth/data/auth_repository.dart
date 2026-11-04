@@ -43,4 +43,10 @@ class AuthRepository {
   Future<void> logout(String refresh) async {
     await _api.send((dio) => dio.post<void>(ApiEndpoints.logout, data: {'refresh': refresh}));
   }
+
+  /// Deletes the account. The server refuses (409) while rides, dues or wallet money are open,
+  /// and the message it returns says what to clear first.
+  Future<void> deleteAccount() async {
+    await _api.send((dio) => dio.post<void>(ApiEndpoints.deleteAccount, data: {'confirm': true}));
+  }
 }

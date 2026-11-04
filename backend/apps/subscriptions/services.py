@@ -140,11 +140,15 @@ def _check_daily_purchase(captain, plan_code):
 
 def pay_daily_plan_from_wallet(captain, plan_code):
     """Buy a daily plan from the captain's wallet. Activates at once, since the money is already held."""
+    from apps.captains.models import CaptainProfile
     from apps.wallets import services as wallet_services
     from apps.wallets.models import WalletTxnKind
 
-    plan = _check_daily_purchase(captain, plan_code)
     with transaction.atomic():
+        # Lock the captain row first, so two purchases at once run one after the other and the
+        # second one sees the first plan as already active instead of paying for a second plan.
+        captain = CaptainProfile.objects.select_for_update().get(pk=captain.pk)
+        plan = _check_daily_purchase(captain, plan_code)
         CaptainSubscription.objects.filter(captain=captain, status=SubStatus.PENDING).update(
             status=SubStatus.CANCELLED
         )

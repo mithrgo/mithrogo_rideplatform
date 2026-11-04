@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/config/env.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../core/location/location_service.dart';
@@ -165,16 +164,12 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
   }
 
   List<Widget> _resultRows(PlaceSearchState search, ThemeData theme) {
-    final radiusKm = Env.localSearchRadiusMeters ~/ 1000;
-    final expandedKm = Env.expandedSearchRadiusMeters ~/ 1000;
-
     switch (search.status) {
       case PlaceSearchStatus.idle:
         return [
           ..._recentRows(search.query, theme),
           _Message(
-            'Search for a place. Nearby results use your location. '
-            'For another city, add its name, such as "railway station Hyderabad".',
+            'Search for a place. Results are near your location, within the search area.',
             theme: theme,
           ),
         ];
@@ -210,33 +205,15 @@ class _LocationSearchScreenState extends ConsumerState<LocationSearchScreen> {
           ),
         ];
       case PlaceSearchStatus.loaded:
+        final radiusKm = ((search.radiusMeters ?? 0) / 1000).round();
         return [
           if (search.notice != null)
             _Message(search.notice!, theme: theme),
-          if (!search.hasResults && search.explicit)
-            _Message('No places found for "${search.query}" in India.', theme: theme),
-          if (!search.hasResults && !search.explicit)
-            _Message(
-              'Nothing for "${search.query}" within $radiusKm km of you.',
-              theme: theme,
-            ),
-          if (search.explicit && search.beyond.isNotEmpty)
-            _SectionHeader('Matches across India', theme: theme),
-          if (search.nearby.isNotEmpty)
+          if (!search.hasResults)
+            _Message('No matching locations found within your nearby search area.', theme: theme),
+          if (search.hasResults)
             _SectionHeader('Within $radiusKm km of you', theme: theme),
           for (final place in search.nearby) _placeTile(place, theme),
-          if (search.canExpand) ...[
-            _Message('No nearby results. You can search a wider area.', theme: theme),
-            ListTile(
-              leading: const Icon(Icons.travel_explore, color: AppColors.ink),
-              title: const Text('Expand search area'),
-              subtitle: Text('Looks up to $expandedKm km away. Results may be far from you.'),
-              onTap: () => ref.read(placeSearchControllerProvider.notifier).expandSearch(),
-            ),
-          ],
-          if (search.expanded && search.beyond.isNotEmpty)
-            _SectionHeader('Further than $radiusKm km', theme: theme),
-          for (final place in search.beyond) _placeTile(place, theme),
         ];
     }
   }

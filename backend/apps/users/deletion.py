@@ -99,6 +99,10 @@ def delete_account(user, reason=""):
         captain.current_latitude = None
         captain.current_longitude = None
         captain.save()
+        # KYC documents (licence, ID, photo) are personal data: remove the files and their records.
+        for document in captain.kyc_documents.all():
+            document.file.delete(save=False)
+        captain.kyc_documents.all().delete()
 
     from apps.notifications.models import DeviceToken
 

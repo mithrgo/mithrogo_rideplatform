@@ -8,4 +8,3 @@ const nizamabadCenter = LatLng(latitude: 18.6725, longitude: 78.0941);
 const nizamabadLabel = 'Nizamabad, Telangana, India';
 
 /// Half the side of the search-bias box, in degrees (about 55 km north-south at this latitude).
-const searchBiasHalfSpanDegrees = 0.5;

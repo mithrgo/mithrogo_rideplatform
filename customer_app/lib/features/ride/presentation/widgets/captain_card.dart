@@ -4,15 +4,20 @@ import '../../../../app/theme/app_colors.dart';
 import '../../models/ride_tracking.dart';
 
 /// Captain name, rating, and vehicle with the plate number, like the "your driver" card in Uber and Rapido.
+/// While the captain is on the way, the yellow badge shows the rider's start PIN instead of the plate.
 class CaptainCard extends StatelessWidget {
-  const CaptainCard({super.key, required this.captain});
+  const CaptainCard({super.key, required this.captain, this.startPin});
 
   final CaptainInfo captain;
+  final String? startPin;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final vehicle = captain.vehicle;
+    final badge = (startPin != null && startPin!.isNotEmpty)
+        ? startPin!
+        : (vehicle != null ? vehicle.registrationNumber : '');
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -57,7 +62,7 @@ class CaptainCard extends StatelessWidget {
               ],
             ),
           ),
-          if (vehicle != null && vehicle.registrationNumber.isNotEmpty)
+          if (badge.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
@@ -66,7 +71,7 @@ class CaptainCard extends StatelessWidget {
                 border: Border.all(color: AppColors.ink, width: 1.2),
               ),
               child: Text(
-                vehicle.registrationNumber,
+                badge,
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, letterSpacing: 0.5),
               ),
             ),

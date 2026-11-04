@@ -10,6 +10,7 @@ class ApiEndpoints {
   static const deleteAccount = 'auth/delete-account/';
   static const customerProfile = 'customers/profile/';
   static const quickPlaces = 'customers/quick-places/';
+  static const placeSearch = 'customers/places/search/';
   static const rideEstimate = 'rides/estimate/';
   static const rides = 'rides/';
 

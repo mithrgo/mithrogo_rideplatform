@@ -152,7 +152,7 @@ class RideScreen extends ConsumerWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
-          if (captain != null) CaptainCard(captain: captain),
+          if (captain != null) CaptainCard(captain: captain, startPin: tracking.startPin),
           const SizedBox(height: 16),
           Row(
             children: [

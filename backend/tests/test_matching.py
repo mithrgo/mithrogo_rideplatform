@@ -106,6 +106,8 @@ def test_timed_out_offer_moves_to_the_next_captain(clock):
     ride = services.create_ride(customer, ride_data())
 
     clock.advance(seconds=PlatformConfig.load().offer_timeout_seconds + 1)
+    # The next captain keeps reporting its location while the first offer runs out.
+    CaptainProfile.objects.filter(pk=second.pk).update(last_location_at=timezone.now())
     services.get_customer_ride(customer, ride.id)
 
     assert RideOffer.objects.get(ride=ride, captain=first).status == OfferStatus.EXPIRED
@@ -153,6 +155,7 @@ def test_expired_offer_cannot_be_accepted_and_moves_on(clock):
     ride = services.create_ride(customer, ride_data())
 
     clock.advance(seconds=PlatformConfig.load().offer_timeout_seconds + 1)
+    CaptainProfile.objects.filter(pk=second.pk).update(last_location_at=timezone.now())
     with pytest.raises(Conflict) as info:
         services.accept_offer(first, ride.id)
 

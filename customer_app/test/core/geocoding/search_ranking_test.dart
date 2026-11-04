@@ -1,5 +1,4 @@
 import 'package:customer_app/core/geocoding/place_category.dart';
-import 'package:customer_app/core/geocoding/search_intent.dart';
 import 'package:customer_app/core/geocoding/search_ranking.dart';
 import 'package:customer_app/core/location/place.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -61,31 +60,6 @@ void main() {
     });
   });
 
-  group('rankBeyond', () {
-    test('keeps only places beyond the radius, closest first, without duplicates', () {
-      final beyond = rankBeyond([
-        ScoredPlace(_place('node:near', 'A', 1000), MatchTier.textMatch),
-        ScoredPlace(_place('node:far', 'B', 400000), MatchTier.textMatch),
-        ScoredPlace(_place('node:mid', 'C', 90000), MatchTier.mappedFeature),
-        ScoredPlace(_place('node:mid', 'C', 90000), MatchTier.textMatch),
-      ], radiusMeters: 30000);
-
-      expect(beyond.map((p) => p.id), ['node:mid', 'node:far']);
-    });
-  });
-
-  group('rankExplicit', () {
-    test('keeps the order the search returned and removes repeats', () {
-      final ranked = rankExplicit([
-        _place('node:h2', 'Hyderabad 2', 150000),
-        _place('node:h1', 'Hyderabad 1', 152000),
-        _place('node:h2', 'Hyderabad 2', 150000),
-      ]);
-
-      expect(ranked.map((p) => p.id), ['node:h2', 'node:h1']);
-    });
-  });
-
   group('categoryForQuery', () {
     test('railway words map to railway stations', () {
       expect(categoryForQuery('railway'), PlaceCategory.railwayStation);
@@ -102,10 +76,6 @@ void main() {
       expect(categoryForQuery('hospital'), PlaceCategory.hospital);
       expect(categoryForQuery('station'), isNull);
       expect(categoryForQuery('petrol pump'), isNull);
-    });
-
-    test('a named place is explicit, so a category does not override it', () {
-      expect(isExplicitPlaceQuery('railway station Hyderabad'), isTrue);
     });
   });
 }
