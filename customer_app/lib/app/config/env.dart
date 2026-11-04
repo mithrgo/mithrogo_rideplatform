@@ -27,13 +27,6 @@ class Env {
     defaultValue: 'https://router.project-osrm.org',
   );
 
-  /// Nominatim geocoding, for destination search. The public server has a usage policy:
-  /// about one request per second, identifying User-Agent, and no bulk or heavy use.
-  static const String nominatimBaseUrl = String.fromEnvironment(
-    'NOMINATIM_BASE_URL',
-    defaultValue: 'https://nominatim.openstreetmap.org',
-  );
-
   /// Overpass API, for "mapped features near a point" (stations, bus stations, hospitals).
   /// The public instance is shared and rate-limited (about 10,000 requests a day, and it returns
   /// HTTP 429 when busy). Fine for development. Production needs a self-hosted or paid instance.
@@ -42,7 +35,7 @@ class Env {
     defaultValue: 'https://overpass-api.de/api/interpreter',
   );
 
-  /// Identifies the app to Nominatim and Overpass, as their usage policies require.
+  /// Identifies the app to Overpass, as its usage policy requires.
   /// Add a contact address for production.
   static const String searchUserAgent = 'MithrGo-CustomerApp/1.0';
 
@@ -51,19 +44,6 @@ class Env {
   static const int serviceAreaRadiusMeters = int.fromEnvironment(
     'SERVICE_AREA_RADIUS_METERS',
     defaultValue: 20000,
-  );
-
-  /// Radius, in metres, of the nearby search around the rider's GPS position.
-  /// Results beyond it are only shown after the rider chooses to expand the search.
-  static const int localSearchRadiusMeters = int.fromEnvironment(
-    'LOCAL_SEARCH_RADIUS_METERS',
-    defaultValue: 30000,
-  );
-
-  /// Radius, in metres, used by "Expand search area" for mapped-feature searches.
-  static const int expandedSearchRadiusMeters = int.fromEnvironment(
-    'EXPANDED_SEARCH_RADIUS_METERS',
-    defaultValue: 100000,
   );
 
   /// Longest driving distance a ride can have, in metres. Checked on the OSRM route, not straight-line.

@@ -48,17 +48,3 @@ List<Place> rankNearby(Iterable<ScoredPlace> hits, {required double radiusMeters
     });
   return [for (final hit in ranked) hit.place];
 }
-
-/// Places beyond [radiusMeters] that were found by an expanded search, closest first.
-List<Place> rankBeyond(Iterable<ScoredPlace> hits, {required double radiusMeters}) {
-  final far = dedupePlaces([
-    for (final hit in hits)
-      if (_distance(hit.place) > radiusMeters) hit.place,
-  ])
-    ..sort((a, b) => _distance(a).compareTo(_distance(b)));
-  return far;
-}
-
-/// Results of a named-place search, in the order the search service returned them.
-/// The GPS origin does not reorder them.
-List<Place> rankExplicit(Iterable<Place> places) => dedupePlaces(places);

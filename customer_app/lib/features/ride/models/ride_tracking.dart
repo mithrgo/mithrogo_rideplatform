@@ -11,6 +11,7 @@ class RideTracking {
     required this.pickup,
     required this.drop,
     this.captain,
+    this.startPin,
   });
 
   factory RideTracking.fromJson(Map<String, dynamic> json) {
@@ -23,6 +24,7 @@ class RideTracking {
       pickup: _place(pickup),
       drop: _place(drop),
       captain: captain == null ? null : CaptainInfo.fromJson(captain),
+      startPin: json['start_pin'] as String?,
     );
   }
 
@@ -31,6 +33,9 @@ class RideTracking {
   final RidePoint pickup;
   final RidePoint drop;
   final CaptainInfo? captain;
+
+  /// The rider's 4-digit start PIN. The backend sends it only from acceptance until the trip starts.
+  final String? startPin;
 
   static RidePoint _place(Map<String, dynamic> json) {
     return RidePoint(

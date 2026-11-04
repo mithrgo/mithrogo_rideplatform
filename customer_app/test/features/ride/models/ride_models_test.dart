@@ -91,6 +91,32 @@ void main() {
       expect(tracking.captain?.vehicle?.description, 'White Honda Activa');
     });
 
+    test('reads the start PIN the backend sends before the trip starts', () {
+      final tracking = RideTracking.fromJson({
+        'ride_id': 'abc',
+        'status': 'CAPTAIN_ARRIVED',
+        'pickup': {'address': 'A', 'latitude': '18.6', 'longitude': '73.8'},
+        'drop': {'address': 'B', 'latitude': '18.7', 'longitude': '73.9'},
+        'captain': {'name': 'Ravi', 'rating': '4.80', 'latitude': '18.6', 'longitude': '73.8'},
+        'start_pin': '4821',
+      });
+
+      expect(tracking.startPin, '4821');
+    });
+
+    test('has no start PIN once the trip has started', () {
+      final tracking = RideTracking.fromJson({
+        'ride_id': 'abc',
+        'status': 'STARTED',
+        'pickup': {'address': 'A', 'latitude': '18.6', 'longitude': '73.8'},
+        'drop': {'address': 'B', 'latitude': '18.7', 'longitude': '73.9'},
+        'captain': null,
+        'start_pin': null,
+      });
+
+      expect(tracking.startPin, isNull);
+    });
+
     test('has no captain before one accepts', () {
       final tracking = RideTracking.fromJson({
         'ride_id': 'abc',

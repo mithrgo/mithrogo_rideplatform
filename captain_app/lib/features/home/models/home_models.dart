@@ -38,7 +38,8 @@ class RideOffer {
   const RideOffer({
     required this.rideId,
     required this.distanceKm,
-    required this.expiresAt,
+    required this.secondsAtReceipt,
+    required this.receivedAt,
     required this.pickupAddress,
     required this.dropAddress,
     required this.fare,
@@ -49,7 +50,8 @@ class RideOffer {
     return RideOffer(
       rideId: json['ride_id'].toString(),
       distanceKm: parseDouble(json['distance_km']),
-      expiresAt: DateTime.tryParse((json['expires_at'] as String?) ?? '') ?? DateTime.now(),
+      secondsAtReceipt: (json['seconds_left'] as num?)?.toInt() ?? 0,
+      receivedAt: DateTime.now(),
       pickupAddress: (json['pickup_address'] as String?) ?? '',
       dropAddress: (json['drop_address'] as String?) ?? '',
       fare: json['fare']?.toString() ?? '0',
@@ -61,11 +63,15 @@ class RideOffer {
 
   /// Distance from the captain to the pickup point.
   final double distanceKm;
-  final DateTime expiresAt;
+  /// Seconds left according to the server when this offer was received.
+  final int secondsAtReceipt;
+
+  /// When this device received the offer. The countdown runs from here, on the device's own clock.
+  final DateTime receivedAt;
   final String pickupAddress;
   final String dropAddress;
   final String fare;
   final String vehicleType;
 
-  int get secondsLeft => expiresAt.difference(DateTime.now()).inSeconds.clamp(0, 999);
+  int get secondsLeft => (secondsAtReceipt - DateTime.now().difference(receivedAt).inSeconds).clamp(0, 999);
 }

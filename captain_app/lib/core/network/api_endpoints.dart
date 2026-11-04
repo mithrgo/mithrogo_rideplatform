@@ -7,6 +7,7 @@ class ApiEndpoints {
   static const refresh = 'auth/refresh/';
   static const logout = 'auth/logout/';
   static const me = 'auth/me/';
+  static const deleteAccount = 'auth/delete-account/';
 
   static const profile = 'captains/profile/';
   static const status = 'captains/status/';

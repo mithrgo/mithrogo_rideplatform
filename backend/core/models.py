@@ -17,7 +17,7 @@ class PlatformConfig(TimeStampedModel):
     """Single row of operational settings. Edit in admin; never hard-code these values."""
 
     search_radius_km = models.DecimalField("search radius (km)", max_digits=5, decimal_places=2, default=3)
-    offer_timeout_seconds = models.PositiveIntegerField("offer timeout (seconds)", default=15)
+    offer_timeout_seconds = models.PositiveIntegerField("offer timeout (seconds)", default=30)
     search_timeout_seconds = models.PositiveIntegerField("search timeout (seconds)", default=120)
     max_offer_attempts = models.PositiveIntegerField("max captains offered per ride", default=5)
     location_freshness_seconds = models.PositiveIntegerField(

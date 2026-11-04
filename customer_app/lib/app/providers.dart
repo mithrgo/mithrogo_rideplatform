@@ -92,9 +92,7 @@ final routeServiceProvider = Provider<RouteService>((ref) {
 });
 
 final placeSearchServiceProvider = Provider<PlaceSearchService>((ref) {
-  final service = NominatimPlaceSearchService();
-  ref.onDispose(service.close);
-  return service;
+  return BackendPlaceSearchService(ref.watch(apiClientProvider));
 });
 
 final nearbyFeatureServiceProvider = Provider<NearbyFeatureService>((ref) {

@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db import transaction
 from django.utils import timezone
 
 from core.geo import haversine_km
@@ -7,7 +8,7 @@ from core.models import PlatformConfig
 from apps.captains.models import CaptainProfile, KycStatus, OnlineStatus
 from apps.captains.services import eligibility_reasons
 from apps.notifications.services import notify
-from apps.rides.models import OfferStatus, RideOffer, RideStatus
+from apps.rides.models import OfferStatus, Ride, RideOffer, RideStatus
 
 
 def eligible_candidates(ride):
@@ -52,27 +53,35 @@ def eligible_candidates(ride):
 
 
 def offer_next(ride):
-    """Offer the ride to the nearest eligible captain. One pending offer per ride at a time."""
-    config = PlatformConfig.load()
-    if RideOffer.objects.filter(ride=ride, status=OfferStatus.PENDING).exists():
-        return None
-    attempts = RideOffer.objects.filter(ride=ride).count()
-    if attempts >= config.max_offer_attempts:
-        return None
-    candidates = eligible_candidates(ride)
-    if not candidates:
-        return None
+    """Offer the ride to the nearest eligible captain. One pending offer per ride at a time.
 
-    distance, captain = candidates[0]
-    now = timezone.now()
-    offer = RideOffer.objects.create(
-        ride=ride,
-        captain=captain,
-        sequence=attempts + 1,
-        distance_km=round(distance, 2),
-        status=OfferStatus.PENDING,
-        expires_at=now + timedelta(seconds=config.offer_timeout_seconds),
-    )
+    The ride row is locked first, so two passes at once (a customer poll and the periodic sweep)
+    cannot both see "no pending offer" and both send one.
+    """
+    config = PlatformConfig.load()
+    with transaction.atomic():
+        ride = Ride.objects.select_for_update().get(pk=ride.pk)
+        if ride.status != RideStatus.SEARCHING:
+            return None
+        if RideOffer.objects.filter(ride=ride, status=OfferStatus.PENDING).exists():
+            return None
+        attempts = RideOffer.objects.filter(ride=ride).count()
+        if attempts >= config.max_offer_attempts:
+            return None
+        candidates = eligible_candidates(ride)
+        if not candidates:
+            return None
+
+        distance, captain = candidates[0]
+        now = timezone.now()
+        offer = RideOffer.objects.create(
+            ride=ride,
+            captain=captain,
+            sequence=attempts + 1,
+            distance_km=round(distance, 2),
+            status=OfferStatus.PENDING,
+            expires_at=now + timedelta(seconds=config.offer_timeout_seconds),
+        )
     notify(
         captain.user,
         "NEW_RIDE_REQUEST",

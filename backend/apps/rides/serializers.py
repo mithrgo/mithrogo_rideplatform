@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.rides.models import CaptainCancelReason, CustomerCancelReason, PaymentMethod, Ride, RideOffer
@@ -158,6 +159,8 @@ class CaptainRideSerializer(RideSerializer):
 
 class OfferSerializer(serializers.ModelSerializer):
     ride_id = serializers.UUIDField(source="ride.id", read_only=True)
+    # Seconds left on the server's clock. The app counts down from this, so a skewed phone clock does not matter.
+    seconds_left = serializers.SerializerMethodField()
     pickup_address = serializers.CharField(source="ride.pickup_address", read_only=True)
     drop_address = serializers.CharField(source="ride.drop_address", read_only=True)
     fare = serializers.DecimalField(source="ride.estimated_fare", max_digits=10, decimal_places=2, read_only=True)
@@ -170,9 +173,13 @@ class OfferSerializer(serializers.ModelSerializer):
             "sequence",
             "distance_km",
             "expires_at",
+            "seconds_left",
             "pickup_address",
             "drop_address",
             "fare",
             "vehicle_type",
         ]
         read_only_fields = fields
+
+    def get_seconds_left(self, offer):
+        return max(0, int((offer.expires_at - timezone.now()).total_seconds()))

@@ -25,7 +25,11 @@ class CaptainProfileSerializer(serializers.ModelSerializer):
             "rating",
             "total_rides",
         ]
-        read_only_fields = ["kyc_status", "kyc_rejection_reason", "online_status", "rating", "total_rides", "license_number", "license_expiry"]
+        # Writes go through the KYC submit endpoint, which enforces the lock after approval.
+        read_only_fields = [
+            "kyc_status", "kyc_rejection_reason", "online_status", "rating", "total_rides",
+            "license_number", "license_expiry", "date_of_birth", "address",
+        ]
 
 
 class KycSubmitSerializer(serializers.Serializer):
